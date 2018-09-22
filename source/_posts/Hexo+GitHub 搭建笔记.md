@@ -74,13 +74,6 @@ $ npm install hexo-generator-category --save
 $ npm install hexo-generator-tag --save
 $ npm install hexo-server --save
 $ npm install hexo-generator-sitemap
-
-著作权归作者所有。
-商业转载请联系作者获得授权，非商业转载请注明出处。
-作者：站长之家编辑 
-链接：https://www.chinaz.com/web/2015/1016/458004.shtml 
-来源：站长之家 
-
 ```
 <!-- more -->
 
