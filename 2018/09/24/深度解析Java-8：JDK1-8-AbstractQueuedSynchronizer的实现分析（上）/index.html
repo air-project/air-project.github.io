@@ -102,7 +102,7 @@
 <meta property="og:image" content="https://res.infoq.com/articles/jdk1.8-abstractqueuedsynchronizer/zh/resources/0730009.png">
 <meta property="og:image" content="https://res.infoq.com/articles/jdk1.8-abstractqueuedsynchronizer/zh/resources/0730011.png">
 <meta property="og:image" content="https://res.infoq.com/articles/jdk1.8-abstractqueuedsynchronizer/zh/resources/0730015.png">
-<meta property="og:updated_time" content="2018-09-24T09:46:50.970Z">
+<meta property="og:updated_time" content="2018-09-24T10:36:22.871Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深度解析Java 8：JDK1.8 AbstractQueuedSynchronizer的实现分析（上）">
 <meta name="twitter:description" content="前言Java中的FutureTask作为可异步执行任务并可获取执行结果而被大家所熟知。通常可以使用future.get()来获取线程的执行结果，在线程执行结束之前，get方法会一直阻塞状态，直到call()返回，其优点是使用线程异步执行任务的情况下还可以获取到线程的执行结果，但是FutureTask的以上功能却是依靠通过一个叫AbstractQueuedSynchronizer的类来实现，至少在J">
@@ -409,6 +409,7 @@
         <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Java中的FutureTask作为可异步执行任务并可获取执行结果而被大家所熟知。通常可以使用future.get()来获取线程的执行结果，在线程执行结束之前，get方法会一直阻塞状态，直到call()返回，其优点是使用线程异步执行任务的情况下还可以获取到线程的执行结果，但是FutureTask的以上功能却是依靠通过一个叫AbstractQueuedSynchronizer的类来实现，至少在JDK1.5、JDK1.6版本是这样的（从1.7开始FutureTask已经被其作者Doug Lea修改为不再依赖AbstractQueuedSynchronizer实现了，这是JDK1.7的变化之一）。但是AbstractQueuedSynchronizer在JDK1.8中还有如下图所示的众多子类：<br><img src="https://res.infoq.com/articles/jdk1.8-abstractqueuedsynchronizer/zh/resources/0730000.png" alt=""><br>这些JDK中的工具类或多或少都被大家用过不止一次，比如ReentrantLock，我们知道ReentrantLock的功能是实现代码段的并发访问控制，也就是通常意义上所说的锁，在没有看到AbstractQueuedSynchronizer前，可能会以为它的实现是通过类似于synchronized，通过对对象加锁来实现的。但事实上它仅仅是一个工具类！没有使用更“高级”的机器指令，不是关键字，也不依靠JDK编译时的特殊处理，仅仅作为一个普普通通的类就完成了代码块的并发访问控制，这就更让人疑问它怎么实现的代码块的并发访问控制的了。那就让我们一起来仔细看下Doug Lea怎么去实现的这个锁。为了方便，本文中使用AQS代替AbstractQueuedSynchronizer。</p>
 <h2 id="细说AQS"><a href="#细说AQS" class="headerlink" title="细说AQS"></a>细说AQS</h2><p>在深入分析AQS之前，我想先从AQS的功能上说明下AQS，站在使用者的角度，AQS的功能可以分为两类：独占功能和共享功能，它的所有子类中，要么实现并使用了它独占功能的API，要么使用了共享锁的功能，而不会同时使用两套API，即便是它最有名的子类ReentrantReadWriteLock，也是通过两个内部类：读锁和写锁，分别实现的两套API来实现的，为什么这么做，后面我们再分析，到目前为止，我们只需要明白AQS在功能上有独占控制和共享控制两种功能即可。</p>
 <h3 id="独占锁"><a href="#独占锁" class="headerlink" title="独占锁"></a>独占锁</h3><p>在真正对解读AQS之前，我想先从使用了它独占控制功能的子类ReentrantLock说起，分析ReentrantLock的同时看一看AQS的实现，再推理出AQS独特的设计思路和实现方式。最后，再看其共享控制功能的实现。<br>对于ReentrantLock，使用过的同学应该都知道，通常是这么用它的：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">reentrantLock.lock()</span><br><span class="line">//do something</span><br><span class="line">reentrantLock.unlock()</span><br></pre></td></tr></table></figure></p>
+<a id="more"></a>
 <p>ReentrantLock会保证 do something在同一时间只有一个线程在执行这段代码，或者说，同一时刻只有一个线程的lock方法会返回。其余线程会被挂起，直到获取锁。从这里可以看出，其实ReentrantLock实现的就是一个独占锁的功能：有且只有一个线程获取到锁，其余线程全部挂起，直到该拥有锁的线程释放锁，被挂起的线程被唤醒重新开始竞争锁。没错，ReentrantLock使用的就是AQS的独占API实现的。<br>那现在我们就从ReentrantLock的实现开始一起看看重入锁是怎么实现的。<br>首先看lock方法：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public void lock() &#123;</span><br><span class="line">    sync.lock();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>如FutureTask（JDK1.6）一样，ReentrantLock内部有代理类完成具体操作，ReentrantLock只是封装了统一的一套API而已。值得注意的是，使用过ReentrantLock的同学应该知道，ReentrantLock又分为公平锁和非公平锁，所以，ReentrantLock内部只有两个sync的实现：<br><img src="https://res.infoq.com/articles/jdk1.8-abstractqueuedsynchronizer/zh/resources/0730002.png" alt=""><br>公平锁：每个线程抢占锁的顺序为先后调用lock方法的顺序依次获取锁，类似于排队吃饭。<br>非公平锁：每个线程抢占锁的顺序不定，谁运气好，谁就获取到锁，和调用lock方法的先后顺序无关，类似于堵车时，加塞的那些XXXX。<br>到这里，通过ReentrantLock的功能和锁的所谓排不排队的方式，我们是否可以这么猜测ReentrantLock或者AQS的实现（现在不清楚谁去实现这些功能）：有那么一个被volatile修饰的标志位叫做key，用来表示有没有线程拿走了锁，或者说，锁还存不存在，还需要一个线程安全的队列，维护一堆被挂起的线程，以至于当锁被归还时，能通知到这些被挂起的线程，可以来竞争获取锁了。<br>至于公平锁和非公平锁，唯一的区别是在获取锁的时候是直接去获取锁，还是进入队列排队的问题了。为了验证我们的猜想，我们继续看一下ReentrantLock中公平锁的实现：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">final void lock() &#123;</span><br><span class="line">        acquire(1);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
@@ -523,6 +524,10 @@
 
           <div class="post-nav-prev post-nav-item">
             
+              <a href="/2018/09/24/深度解析Java-8：AbstractQueuedSynchronizer的实现分析（下）/" rel="prev" title="深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下）">
+                深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下） <i class="fa fa-chevron-right"></i>
+              </a>
+            
           </div>
         </div>
       
@@ -605,7 +610,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-count">3</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -722,7 +727,7 @@
     </span>
     
       <span class="post-meta-item-text">全站共&#58;</span>
-    4.9k字</span>
+    9.1k字</span>
   
   
 <span class="post-meta-divider">|</span>

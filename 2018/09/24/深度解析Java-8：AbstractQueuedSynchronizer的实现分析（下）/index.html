@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="浩汝烟海" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="前言经过本系列的上半部分JDK1.8 AbstractQueuedSynchronizer的实现分析（上）的解读，相信很多读者已经对AbstractQueuedSynchronizer(下文简称AQS)的独占功能了然于胸,那么这次我们通过对另一个工具类:CountDownLatch的分析来解读AQS的另外一个功能：共享功能。 AQS共享功能的实现在开始解读AQS的共享功能前，我们再重温一下Coun">
+<meta name="keywords" content="java spring hexo git">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下）">
+<meta property="og:url" content="http://yoursite.com/2018/09/24/深度解析Java-8：AbstractQueuedSynchronizer的实现分析（下）/index.html">
+<meta property="og:site_name" content="浩汝烟海">
+<meta property="og:description" content="前言经过本系列的上半部分JDK1.8 AbstractQueuedSynchronizer的实现分析（上）的解读，相信很多读者已经对AbstractQueuedSynchronizer(下文简称AQS)的独占功能了然于胸,那么这次我们通过对另一个工具类:CountDownLatch的分析来解读AQS的另外一个功能：共享功能。 AQS共享功能的实现在开始解读AQS的共享功能前，我们再重温一下Coun">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://res.infoq.com/articles/java8-abstractqueuedsynchronizer/zh/resources/0815012.png">
+<meta property="og:image" content="https://res.infoq.com/articles/java8-abstractqueuedsynchronizer/zh/resources/0815018.png">
+<meta property="og:image" content="https://res.infoq.com/articles/java8-abstractqueuedsynchronizer/zh/resources/0815020.png">
+<meta property="og:image" content="https://res.infoq.com/articles/java8-abstractqueuedsynchronizer/zh/resources/0815021.png">
+<meta property="og:image" content="https://res.infoq.com/articles/java8-abstractqueuedsynchronizer/zh/resources/0815022.png">
+<meta property="og:updated_time" content="2018-09-24T10:36:14.038Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下）">
+<meta name="twitter:description" content="前言经过本系列的上半部分JDK1.8 AbstractQueuedSynchronizer的实现分析（上）的解读，相信很多读者已经对AbstractQueuedSynchronizer(下文简称AQS)的独占功能了然于胸,那么这次我们通过对另一个工具类:CountDownLatch的分析来解读AQS的另外一个功能：共享功能。 AQS共享功能的实现在开始解读AQS的共享功能前，我们再重温一下Coun">
+<meta name="twitter:image" content="https://res.infoq.com/articles/java8-abstractqueuedsynchronizer/zh/resources/0815012.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/09/24/深度解析Java-8：AbstractQueuedSynchronizer的实现分析（下）/"/>
+
+
+
+
+
+  <title>深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下） | 浩汝烟海</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+	<a href="https://github.com/air-project/air-project.github.io" class="github-corner" aria-label="View source on Github"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; left: 0; transform: scale(-1, 1);" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style></a>
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">浩汝烟海</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/09/24/深度解析Java-8：AbstractQueuedSynchronizer的实现分析（下）/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="air">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/pic_hd.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浩汝烟海">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下）</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-09-24T18:32:39+08:00">
+                2018-09-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  4.2k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  15
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>经过本系列的上半部分JDK1.8 AbstractQueuedSynchronizer的实现分析（上）的解读，相信很多读者已经对AbstractQueuedSynchronizer(下文简称AQS)的独占功能了然于胸,那么这次我们通过对另一个工具类:CountDownLatch的分析来解读AQS的另外一个功能：共享功能。</p>
+<h3 id="AQS共享功能的实现"><a href="#AQS共享功能的实现" class="headerlink" title="AQS共享功能的实现"></a>AQS共享功能的实现</h3><p>在开始解读AQS的共享功能前，我们再重温一下CountDownLatch，CountDownLatch为java.util.concurrent包下的计数器工具类，常被用在多线程环境下，它在初始时需要指定一个计数器的大小，然后可被多个线程并发的实现减1操作，并在计数器为0后调用await方法的线程被唤醒，从而实现多线程间的协作。它在多线程环境下的基本使用方式为：<br> <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"> //main thread</span><br><span class="line"> // 新建一个CountDownLatch，并指制定一个初始大小</span><br><span class="line"> CountDownLatch countDownLatch = new CountDownLatch(3);</span><br><span class="line"> // 调用await方法后，main线程将阻塞在这里，直到countDownLatch 中的计数为0 </span><br><span class="line"> countDownLatch.await();</span><br><span class="line"> System.out.println(&quot;over&quot;);</span><br><span class="line"></span><br><span class="line">//thread1</span><br><span class="line">// do something </span><br><span class="line">//...........</span><br><span class="line">//调用countDown方法，将计数减1</span><br><span class="line"> countDownLatch.countDown();</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">//thread2</span><br><span class="line">// do something </span><br><span class="line">//...........</span><br><span class="line">//调用countDown方法，将计数减1</span><br><span class="line"> countDownLatch.countDown();</span><br><span class="line"></span><br><span class="line">  //thread3</span><br><span class="line">// do something </span><br><span class="line">//...........</span><br><span class="line">//调用countDown方法，将计数减1</span><br><span class="line"> countDownLatch.countDown();</span><br></pre></td></tr></table></figure></p>
+<p> 注意，线程thread 1,2,3各自调用 countDown后，countDownLatch 的计数为0，await方法返回，控制台输入“over”,在此之前main thread 会一直沉睡。</p>
+<p>可以看到CountDownLatch的作用类似于一个“栏栅”，在CountDownLatch的计数为0前，调用await方法的线程将一直阻塞，直到CountDownLatch计数为0，await方法才会返回，</p>
+<p>而CountDownLatch的countDown()方法则一般由各个线程调用，实现CountDownLatch计数的减1。</p>
+<p>知道了CountDownLatch的基本使用方式，我们就从上述DEMO的第一行new CountDownLatch（3）开始，看看CountDownLatch是怎么实现的。</p>
+<a id="more"></a>
+<p>首先，看下CountDownLatch的构造方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public CountDownLatch(int count) &#123;</span><br><span class="line">    if (count &lt; 0) throw new IllegalArgumentException(&quot;count &lt; 0&quot;);</span><br><span class="line">    this.sync = new Sync(count);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>和ReentrantLock类似，CountDownLatch内部也有一个叫做Sync的内部类，同样也是用它继承了AQS。</p>
+<p>再看下Sync：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Sync(int count) &#123;</span><br><span class="line">    setState(count);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>如果你看过本系列的上半部分，你对setState方法一定不会陌生，它是AQS的一个“状态位”，在不同的场景下，代表不同的含义，比如在ReentrantLock中，表示加锁的次数，在CountDownLatch中，则表示CountDownLatch的计数器的初始大小。<br><img src="https://res.infoq.com/articles/java8-abstractqueuedsynchronizer/zh/resources/0815012.png" alt=""><br>设置完计数器大小后CountDownLatch的构造方法返回，下面我们再看下CountDownLatch的await()方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public void await() throws InterruptedException &#123;</span><br><span class="line">    sync.acquireSharedInterruptibly(1);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>调用了Sync的acquireSharedInterruptibly方法，因为Sync是AQS子类的原因，这里其实是直接调用了AQS的acquireSharedInterruptibly方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public final void acquireSharedInterruptibly(int arg)</span><br><span class="line">        throws InterruptedException &#123;</span><br><span class="line">    if (Thread.interrupted())</span><br><span class="line">        throw new InterruptedException();</span><br><span class="line">    if (tryAcquireShared(arg) &lt; 0)</span><br><span class="line">        doAcquireSharedInterruptibly(arg);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>从方法名上看，这个方法的调用是响应线程的打断的，所以在前两行会检查下线程是否被打断。接着，尝试着获取共享锁，小于0，表示获取失败，通过本系列的上半部分的解读， 我们知道AQS在获取锁的思路是，先尝试直接获取锁，如果失败会将当前线程放在队列中，按照FIFO的原则等待锁。而对于共享锁也是这个思路，如果和独占锁一致，这里的tryAcquireShared应该是个空方法，留给子类去判断:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">protected int tryAcquireShared(int arg) &#123;</span><br><span class="line">    throw new UnsupportedOperationException();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>再看看CountDownLatch：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">protected int tryAcquireShared(int acquires) &#123;</span><br><span class="line">    return (getState() == 0) ? 1 : -1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>如果state变成0了，则返回1，表示获取成功，否则返回-1则表示获取失败。</p>
+<p>看到这里，读者可能会发现， await方法的获取方式更像是在获取一个独占锁，那为什么这里还会用tryAcquireShared呢？</p>
+<p>回想下CountDownLatch的await方法是不是只能在主线程中调用？答案是否定的，CountDownLatch的await方法可以在多个线程中调用，当CountDownLatch的计数器为0后，调用await的方法都会依次返回。 也就是说可以多个线程同时在等待await方法返回，所以它被设计成了实现tryAcquireShared方法，获取的是一个共享锁，锁在所有调用await方法的线程间共享，所以叫共享锁。</p>
+<p>回到acquireSharedInterruptibly方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public final void acquireSharedInterruptibly(int arg)</span><br><span class="line">        throws InterruptedException &#123;</span><br><span class="line">    if (Thread.interrupted())</span><br><span class="line">        throw new InterruptedException();</span><br><span class="line">    if (tryAcquireShared(arg) &lt; 0)</span><br><span class="line">        doAcquireSharedInterruptibly(arg);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>如果获取共享锁失败（返回了-1，说明state不为0，也就是CountDownLatch的计数器还不为0），进入调用doAcquireSharedInterruptibly方法中，按照我们上述的猜想，应该是要将当前线程放入到队列中去。</p>
+<p>在这之前，我们再回顾一下AQS队列的数据结构：AQS是一个双向链表，通过节点中的next，pre变量分别指向当前节点后一个节点和前一个节点。其中，每个节点中都包含了一个线程和一个类型变量：表示当前节点是独占节点还是共享节点，头节点中的线程为正在占有锁的线程，而后的所有节点的线程表示为正在等待获取锁的线程。如下图所示：<br><img src="https://res.infoq.com/articles/java8-abstractqueuedsynchronizer/zh/resources/0815018.png" alt=""><br>黄色节点为头节点，表示正在获取锁的节点，剩下的蓝色节点（Node1、Node2、Node3）为正在等待锁的节点，他们通过各自的next、pre变量分别指向前后节点，形成了AQS中的双向链表。每个线程被加上类型（共享还是独占）后便是一个Node， 也就是本文中说的节点。</p>
+<p>再看看doAcquireSharedInterruptibly方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">private void doAcquireSharedInterruptibly(int arg)</span><br><span class="line">        throws InterruptedException &#123;</span><br><span class="line">        final Node node = addWaiter(Node.SHARED); </span><br><span class="line">//将当前线程包装为类型为Node.SHARED的节点，标示这是一个共享节点。</span><br><span class="line">        boolean failed = true;</span><br><span class="line">        try &#123;</span><br><span class="line">            for (;;) &#123;</span><br><span class="line">                final Node p = node.predecessor();</span><br><span class="line">                if (p == head) &#123;</span><br><span class="line">//如果新建节点的前一个节点，就是Head，说明当前节点是AQS队列中等待获取锁的第一个节点，</span><br><span class="line">//按照FIFO的原则，可以直接尝试获取锁。</span><br><span class="line">                    int r = tryAcquireShared(arg);</span><br><span class="line">                    if (r &gt;= 0) &#123;</span><br><span class="line">                        setHeadAndPropagate(node, r); </span><br><span class="line">//获取成功，需要将当前节点设置为AQS队列中的第一个节点，这是AQS的规则//队列的头节点表示正在获取锁的节点</span><br><span class="line">                        p.next = null; // help GC</span><br><span class="line">                        failed = false;</span><br><span class="line">                        return;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                if (shouldParkAfterFailedAcquire(p, node) &amp;&amp; //检查下是否需要将当前节点挂起</span><br><span class="line">                    parkAndCheckInterrupt()) </span><br><span class="line">                    throw new InterruptedException();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            if (failed)</span><br><span class="line">                cancelAcquire(node);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里有几点需要说明的：</p>
+<ol>
+<li>setHeadAndPropagate方法：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">private void setHeadAndPropagate(Node node, int propagate) &#123;</span><br><span class="line">    Node h = head; // Record old head for check below</span><br><span class="line">    setHead(node); </span><br><span class="line">    if (propagate &gt; 0 || h == null || h.waitStatus &lt; 0 ||</span><br><span class="line">        (h = head) == null || h.waitStatus &lt; 0) &#123;</span><br><span class="line">        Node s = node.next;</span><br><span class="line">        if (s == null || s.isShared())</span><br><span class="line">            doReleaseShared();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>首先，使用了CAS更换了头节点，然后，将当前节点的下一个节点取出来，如果同样是“shared”类型的，再做一个”releaseShared”操作。</p>
+<p>看下doReleaseShared方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">for (;;) &#123;</span><br><span class="line">            Node h = head;</span><br><span class="line">            if (h != null &amp;&amp; h != tail) &#123;</span><br><span class="line">                int ws = h.waitStatus;</span><br><span class="line">                if (ws == Node.SIGNAL) &#123; </span><br><span class="line">                    if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0)) </span><br><span class="line">//如果当前节点是SIGNAL意味着，它正在等待一个信号，  </span><br><span class="line">//或者说，它在等待被唤醒，因此做两件事，1是重置waitStatus标志位，2是重置成功后,唤醒下一个节点。</span><br><span class="line">                        continue;            // loop to recheck cases</span><br><span class="line">                    unparkSuccessor(h);</span><br><span class="line">                &#125;</span><br><span class="line">                else if (ws == 0 &amp;&amp;</span><br><span class="line">                         !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))  </span><br><span class="line">//如果本身头节点的waitStatus是出于重置状态（waitStatus==0）的，将其设置为“传播”状态。</span><br><span class="line">//意味着需要将状态向后一个节点传播。</span><br><span class="line">                    continue;                // loop on failed CAS</span><br><span class="line">            &#125;</span><br><span class="line">            if (h == head)                   // loop if head changed</span><br><span class="line">                break;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure></p>
+<p>为什么要这么做呢？这就是共享功能和独占功能最不一样的地方，对于独占功能来说，有且只有一个线程（通常只对应一个节点，拿ReentantLock举例，如果当前持有锁的线程重复调用lock()方法，那根据本系列上半部分我们的介绍，我们知道，会被包装成多个节点在AQS的队列中，所以用一个线程来描述更准确），能够获取锁，但是对于共享功能来说。</p>
+<p>共享的状态是可以被共享的，也就是意味着其他AQS队列中的其他节点也应能第一时间知道状态的变化。因此，一个节点获取到共享状态流程图是这样的：<br>比如现在有如下队列：<br>当Node1调用tryAcquireShared成功后，更换了头节点：<br><img src="https://res.infoq.com/articles/java8-abstractqueuedsynchronizer/zh/resources/0815020.png" alt=""><br>     Node1变成了头节点然后调用unparkSuccessor()方法唤醒了Node2、Node2中持有的线程A出于上面流程图的park node的位置，</p>
+<p>线程A被唤醒后，重复黄色线条的流程，重新检查调用tryAcquireShared方法，看能否成功，如果成功，则又更改头节点，重复以上步骤，以实现节点自身获取共享锁成功后，唤醒下一个共享类型节点的操作，实现共享状态的向后传递。</p>
+<p>2.其实对于doAcquireShared方法，AQS还提供了集中类似的实现：<br><img src="https://res.infoq.com/articles/java8-abstractqueuedsynchronizer/zh/resources/0815021.png" alt=""><br>分别对应了：</p>
+<ol>
+<li>带参数请求共享锁。 （忽略中断）</li>
+<li>带参数请求共享锁，且响应中断。（每次循环时，会检查当前线程的中断状态，以实现对线程中断的响应）</li>
+<li>带参数请求共享锁但是限制等待时间。（第二个参数设置超时时间，超出时间后，方法返回。）<br><img src="https://res.infoq.com/articles/java8-abstractqueuedsynchronizer/zh/resources/0815022.png" alt=""><br>比较特别的为最后一个doAcquireSharedNanos方法，我们一起看下它怎么实现超时时间的控制的。</li>
+</ol>
+<p>因为该方法和其余获取共享锁的方法逻辑是类似的，我用红色框圈出了它所不一样的地方，也就是实现超时时间控制的地方。</p>
+<p>可以看到，其实就是在进入方法时，计算出了一个“deadline”，每次循环的时候用当前时间和“deadline”比较，大于“dealine”说明超时时间已到，直接返回方法。</p>
+<p>注意，最后一个红框中的这行代码：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nanosTimeout &gt; spinForTimeoutThreshold</span><br></pre></td></tr></table></figure></p>
+<p>从变量的字面意思可知，这是拿超时时间和超时自旋的最小作比较，在这里Doug Lea把超时自旋的阈值设置成了1000ns,即只有超时时间大于1000ns才会去挂起线程，否则，再次循环，以实现“自旋”操作。这是“自旋”在AQS中的应用之处。</p>
+<p>看完await方法，我们再来看下countDown()方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public void countDown() &#123;</span><br><span class="line">    sync.releaseShared(1);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>调用了AQS的releaseShared方法,并传入了参数1:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public final boolean releaseShared(int arg) &#123;</span><br><span class="line">    if (tryReleaseShared(arg)) &#123;</span><br><span class="line">        doReleaseShared();</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line">    return false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>同样先尝试去释放锁，tryReleaseShared同样为空方法，留给子类自己去实现，以下是CountDownLatch的内部类Sync的实现：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">protected boolean tryReleaseShared(int releases) &#123;</span><br><span class="line">        // Decrement count; signal when transition to zero</span><br><span class="line">        for (;;) &#123;</span><br><span class="line">            int c = getState();</span><br><span class="line">            if (c == 0)</span><br><span class="line">                return false;</span><br><span class="line">            int nextc = c-1;</span><br><span class="line">            if (compareAndSetState(c, nextc))</span><br><span class="line">                return nextc == 0;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>死循环更新state的值，实现state的减1操作，之所以用死循环是为了确保state值的更新成功。</p>
+<p>从上文的分析中可知，如果state的值为0，在CountDownLatch中意味：所有的子线程已经执行完毕，这个时候可以唤醒调用await()方法的线程了，而这些线程正在AQS的队列中，并被挂起的，</p>
+<p>所以下一步应该去唤醒AQS队列中的头节点了（AQS的队列为FIFO队列），然后由头节点去依次唤醒AQS队列中的其他共享节点。</p>
+<p>如果tryReleaseShared返回true,进入doReleaseShared()方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">private void doReleaseShared() &#123;</span><br><span class="line">        for (;;) &#123;</span><br><span class="line">            Node h = head;</span><br><span class="line">            if (h != null &amp;&amp; h != tail) &#123;</span><br><span class="line">                int ws = h.waitStatus;</span><br><span class="line">                if (ws == Node.SIGNAL) &#123; </span><br><span class="line">                    if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0)) </span><br><span class="line">//如果当前节点是SIGNAL意味着，它正在等待一个信号，</span><br><span class="line"> //或者说，它在等待被唤醒，因此做两件事，1是重置waitStatus标志位，2是重置成功后,唤醒下一个节点。</span><br><span class="line">                        continue;            // loop to recheck cases</span><br><span class="line">                    unparkSuccessor(h);</span><br><span class="line">                &#125;</span><br><span class="line">                else if (ws == 0 &amp;&amp;</span><br><span class="line">                         !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))  </span><br><span class="line">//如果本身头节点的waitStatus是出于重置状态（waitStatus==0）的，将其设置为“传播”状态。</span><br><span class="line">//意味着需要将状态向后一个节点传播。</span><br><span class="line">                    continue;                // loop on failed CAS</span><br><span class="line">            &#125;</span><br><span class="line">            if (h == head)                   // loop if head changed</span><br><span class="line">                break;</span><br><span class="line">        &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>当线程被唤醒后，会重新尝试获取共享锁，而对于CountDownLatch线程获取共享锁判断依据是state是否为0，而这个时候显然state已经变成了0，因此可以顺利获取共享锁并且依次唤醒AQS队里中后面的节点及对应的线程。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>本文从CountDownLatch入手，深入分析了AQS关于共享锁方面的实现方式：</p>
+<p>如果获取共享锁失败后，将请求共享锁的线程封装成Node对象放入AQS的队列中，并挂起Node对象对应的线程，实现请求锁线程的等待操作。待共享锁可以被获取后，从头节点开始，依次唤醒头节点及其以后的所有共享类型的节点。实现共享状态的传播。</p>
+<p>这里有几点值得注意：<br>与AQS的独占功能一样，共享锁是否可以被获取的判断为空方法，交由子类去实现。<br>与AQS的独占功能不同，当锁被头节点获取后，独占功能是只有头节点获取锁，其余节点的线程继续沉睡，等待锁被释放后，才会唤醒下一个节点的线程，而共享功能是只要头节点获取锁成功，就在唤醒自身节点对应的线程的同时，继续唤醒AQS队列中的下一个节点的线程，每个节点在唤醒自身的同时还会唤醒下一个节点对应的线程，以实现共享状态的“向后传播”，从而实现共享功能。<br>以上的分析都是从AQS子类的角度去看待AQS的部分功能的，而如果直接看待AQS，或许可以这么去解读：</p>
+<p>首先，AQS并不关心“是什么锁”，对于AQS来说它只是实现了一系列的用于判断“资源”是否可以访问的API,并且封装了在“访问资源”受限时将请求访问的线程的加入队列、挂起、唤醒等操作， AQS只关心“资源不可以访问时，怎么处理？”、“资源是可以被同时访问，还是在同一时间只能被一个线程访问？”、“如果有线程等不及资源了，怎么从AQS的队列中退出？”等一系列围绕资源访问的问题，而至于“资源是否可以被访问？”这个问题则交给AQS的子类去实现。</p>
+<p>当AQS的子类是实现独占功能时，例如ReentrantLock，“资源是否可以被访问”被定义为只要AQS的state变量不为0，并且持有锁的线程不是当前线程，则代表资源不能访问。</p>
+<p>当AQS的子类是实现共享功能时，例如：CountDownLatch，“资源是否可以被访问”被定义为只要AQS的state变量不为0，说明资源不能访问。</p>
+<p>这是典型的将规则和操作分开的设计思路：规则子类定义，操作逻辑因为具有公用性，放在父类中去封装。</p>
+<p>当然，正式因为AQS只是关心“资源在什么条件下可被访问”，所以子类还可以同时使用AQS的共享功能和独占功能的API以实现更为复杂的功能。</p>
+<p>比如：ReentrantReadWriteLock，我们知道ReentrantReadWriteLock的中也有一个叫Sync的内部类继承了AQS，而AQS的队列可以同时存放共享锁和独占锁，对于ReentrantReadWriteLock来说分别代表读锁和写锁，当队列中的头节点为读锁时，代表读操作可以执行，而写操作不能执行，因此请求写操作的线程会被挂起，当读操作依次推出后，写锁成为头节点，请求写操作的线程被唤醒，可以执行写操作，而此时的读请求将被封装成Node放入AQS的队列中。如此往复，实现读写锁的读写交替进行。</p>
+<p>而本系列文章上半部分提到的FutureTask，其实思路也是：封装一个存放线程执行结果的变量A,使用AQS的独占API实现线程对变量A的独占访问，判断规则是，线程没有执行完毕：call()方法没有返回前，不能访问变量A，或者是超时时间没到前不能访问变量A(这就是FutureTask的get方法可以实现获取线程执行结果时，设置超时时间的原因)。<br>原网页地址：<a href="http://www.infoq.com/cn/articles/java8-abstractqueuedsynchronizer#" target="_blank" rel="noopener">http://www.infoq.com/cn/articles/java8-abstractqueuedsynchronizer#</a></p>
+<p>最后欢迎到这里提PR，我会即使回复</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.png" alt="air 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.png" alt="air 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    air
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://yoursite.com/2018/09/24/深度解析Java-8：AbstractQueuedSynchronizer的实现分析（下）/" title="深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下）">http://yoursite.com/2018/09/24/深度解析Java-8：AbstractQueuedSynchronizer的实现分析（下）/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/09/24/深度解析Java-8：JDK1-8-AbstractQueuedSynchronizer的实现分析（上）/" rel="next" title="深度解析Java 8：JDK1.8 AbstractQueuedSynchronizer的实现分析（上）">
+                <i class="fa fa-chevron-left"></i> 深度解析Java 8：JDK1.8 AbstractQueuedSynchronizer的实现分析（上）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+ 
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  
+    <div class="comments" id="comments">
+      <div id="vcomments"></div>
+    </div>
+  
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/pic_hd.jpg"
+                alt="air" />
+            
+              <p class="site-author-name" itemprop="name">air</p>
+              <p class="site-description motion-element" itemprop="description">Stay hungry,stay foolish.Keep moving on</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                
+                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-name">分类</span>
+                
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          <div class="links-of-author motion-element">
+            
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/air-project" target="_blank" title="GitHub">
+                    
+                      <i class="fa fa-fw fa-github"></i>GitHub</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://gitee.com/cdair" target="_blank" title="Gitee">
+                    
+                      <i class="fa fa-fw fa-copyright"></i>Gitee</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="mailto:441286376@qq.com" target="_blank" title="E-Mail">
+                    
+                      <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                </span>
+              
+            
+          </div>
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#AQS共享功能的实现"><span class="nav-number">1.1.</span> <span class="nav-text">AQS共享功能的实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#总结"><span class="nav-number">1.2.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+         <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart" aria-hidden="true" ></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">air</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全站共&#58;</span>
+    9.1k字</span>
+  
+  
+<span class="post-meta-divider">|</span>
+  
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  
+  
+  <span class="post-meta-divider">|</span>
+  
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a></div>
+
+  
+</div>
+ 
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
