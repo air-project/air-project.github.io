@@ -5,9 +5,9 @@
   
   <link href="/atom.xml" rel="self"/>
   
-  <link href="http://yoursite.com/"/>
+  <link href="https://air-project.github.io/"/>
   <updated>2018-09-24T13:24:12.709Z</updated>
-  <id>http://yoursite.com/</id>
+  <id>https://air-project.github.io/</id>
   
   <author>
     <name>air</name>
@@ -18,8 +18,8 @@
   
   <entry>
     <title>深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下）</title>
-    <link href="http://yoursite.com/2018/09/24/%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90Java-8%EF%BC%9AAbstractQueuedSynchronizer%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%8B%EF%BC%89/"/>
-    <id>http://yoursite.com/2018/09/24/深度解析Java-8：AbstractQueuedSynchronizer的实现分析（下）/</id>
+    <link href="https://air-project.github.io/2018/09/24/%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90Java-8%EF%BC%9AAbstractQueuedSynchronizer%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%8B%EF%BC%89/"/>
+    <id>https://air-project.github.io/2018/09/24/深度解析Java-8：AbstractQueuedSynchronizer的实现分析（下）/</id>
     <published>2018-09-24T10:32:39.000Z</published>
     <updated>2018-09-24T13:24:12.709Z</updated>
     
@@ -41,8 +41,8 @@
   
   <entry>
     <title>深度解析Java 8：JDK1.8 AbstractQueuedSynchronizer的实现分析（上）</title>
-    <link href="http://yoursite.com/2018/09/24/%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90Java-8%EF%BC%9AJDK1-8-AbstractQueuedSynchronizer%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%8A%EF%BC%89/"/>
-    <id>http://yoursite.com/2018/09/24/深度解析Java-8：JDK1-8-AbstractQueuedSynchronizer的实现分析（上）/</id>
+    <link href="https://air-project.github.io/2018/09/24/%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90Java-8%EF%BC%9AJDK1-8-AbstractQueuedSynchronizer%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%8A%EF%BC%89/"/>
+    <id>https://air-project.github.io/2018/09/24/深度解析Java-8：JDK1-8-AbstractQueuedSynchronizer的实现分析（上）/</id>
     <published>2018-09-24T08:25:37.000Z</published>
     <updated>2018-09-24T13:24:14.636Z</updated>
     
@@ -61,8 +61,8 @@
   
   <entry>
     <title>Hexo+GitHub 搭建笔记</title>
-    <link href="http://yoursite.com/2018/09/20/Hexo+GitHub%20%E6%90%AD%E5%BB%BA%E7%AC%94%E8%AE%B0/"/>
-    <id>http://yoursite.com/2018/09/20/Hexo+GitHub 搭建笔记/</id>
+    <link href="https://air-project.github.io/2018/09/20/Hexo+GitHub%20%E6%90%AD%E5%BB%BA%E7%AC%94%E8%AE%B0/"/>
+    <id>https://air-project.github.io/2018/09/20/Hexo+GitHub 搭建笔记/</id>
     <published>2018-09-20T05:14:58.000Z</published>
     <updated>2018-11-09T08:56:35.285Z</updated>
     
@@ -79,10 +79,10 @@
     
     </summary>
     
-      <category term="hexo" scheme="http://yoursite.com/categories/hexo/"/>
+      <category term="hexo" scheme="https://air-project.github.io/categories/hexo/"/>
     
     
-      <category term="hexo" scheme="http://yoursite.com/tags/hexo/"/>
+      <category term="hexo" scheme="https://air-project.github.io/tags/hexo/"/>
     
   </entry>
   
