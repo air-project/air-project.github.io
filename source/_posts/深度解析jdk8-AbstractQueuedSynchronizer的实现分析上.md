@@ -1,5 +1,5 @@
 ---
-title: 深度解析Java 8：JDK1.8 AbstractQueuedSynchronizer的实现分析（上）
+title: 深度解析jdk8-AbstractQueuedSynchronizer的实现分析上
 date: 2018-09-24 16:25:37
 commentIssueId: 12
 tags:
@@ -8,6 +8,7 @@ tags:
 Java中的FutureTask作为可异步执行任务并可获取执行结果而被大家所熟知。通常可以使用future.get()来获取线程的执行结果，在线程执行结束之前，get方法会一直阻塞状态，
 直到call()返回，其优点是使用线程异步执行任务的情况下还可以获取到线程的执行结果，但是FutureTask的以上功能却是依靠通过一个叫AbstractQueuedSynchronizer的类来实现，
 至少在JDK1.5、JDK1.6版本是这样的（从1.7开始FutureTask已经被其作者Doug Lea修改为不再依赖AbstractQueuedSynchronizer实现了，这是JDK1.7的变化之一）。
+<!-- more -->
 但是AbstractQueuedSynchronizer在JDK1.8中还有如下图所示的众多子类：
 ![](https://res.infoq.com/articles/jdk1.8-abstractqueuedsynchronizer/zh/resources/0730000.png)  
 这些JDK中的工具类或多或少都被大家用过不止一次，比如ReentrantLock，我们知道ReentrantLock的功能是实现代码段的并发访问控制，
@@ -27,7 +28,7 @@ reentrantLock.lock()
 reentrantLock.unlock()
 ```
 
-<!-- more -->
+
 
 ReentrantLock会保证 do something在同一时间只有一个线程在执行这段代码，或者说，同一时刻只有一个线程的lock方法会返回。其余线程会被挂起，直到获取锁。从这里可以看出，其实ReentrantLock实现的就是一个独占锁的功能：有且只有一个线程获取到锁，其余线程全部挂起，直到该拥有锁的线程释放锁，被挂起的线程被唤醒重新开始竞争锁。没错，ReentrantLock使用的就是AQS的独占API实现的。
 那现在我们就从ReentrantLock的实现开始一起看看重入锁是怎么实现的。
@@ -280,5 +281,3 @@ static final class FairSync extends Sync {
 这篇文章，我们从ReentrantLock出发，完整的分析了AQS独占功能的API及内部实现，总的来说，思路其实并不复杂，还是使用的标志位+队列的方式，记录获取锁、竞争锁、释放锁等一系列锁的状态，或许用更准确一点的描述的话，应该是使用的标志位+队列的方式，记录锁、竞争、释放等一系列独占的状态，因为站在AQS的层面state可以表示锁，也可以表示其他状态，它并不关心它的子类把它变成一个什么工具类，而只是提供了一套维护一个独占状态。甚至，最准确的是AQS只是维护了一个状态，因为，别忘了，它还有一套共享状态的API，所以，AQS只是维护一个状态，一个控制各个线程何时可以访问的状态，它只对状态负责，而这个状态表示什么含义，由子类自己去定义。
 
 原网页地址：http://www.infoq.com/cn/articles/jdk1.8-abstractqueuedsynchronizer
-
-最后欢迎到[这里](https://github.com/air-project/air-project.github.io/issues)提PR，我会即使回复

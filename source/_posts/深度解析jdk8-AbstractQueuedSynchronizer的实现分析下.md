@@ -1,5 +1,5 @@
 ---
-title: 深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下）
+title: 深度解析jdk8-AbstractQueuedSynchronizer的实现分析下
 date: 2018-09-24 18:32:39
 commentIssueId: 11
 tags:
@@ -15,6 +15,8 @@ tags:
 在开始解读AQS的共享功能前，我们再重温一下CountDownLatch，CountDownLatch为java.util.concurrent包下的计数器工具类，
 常被用在多线程环境下，它在初始时需要指定一个计数器的大小，然后可被多个线程并发的实现减1操作，并在计数器为0后调用await方法的线程被唤醒，
 从而实现多线程间的协作。它在多线程环境下的基本使用方式为：
+
+<!-- more -->
  ```
   //main thread
   // 新建一个CountDownLatch，并指制定一个初始大小
@@ -51,7 +53,6 @@ tags:
 
 知道了CountDownLatch的基本使用方式，我们就从上述DEMO的第一行new CountDownLatch（3）开始，看看CountDownLatch是怎么实现的。
 
-<!-- more -->
 
 首先，看下CountDownLatch的构造方法：
 ```
@@ -311,5 +312,3 @@ private void doReleaseShared() {
 
 而本系列文章上半部分提到的FutureTask，其实思路也是：封装一个存放线程执行结果的变量A,使用AQS的独占API实现线程对变量A的独占访问，判断规则是，线程没有执行完毕：call()方法没有返回前，不能访问变量A，或者是超时时间没到前不能访问变量A(这就是FutureTask的get方法可以实现获取线程执行结果时，设置超时时间的原因)。   
 原网页地址：http://www.infoq.com/cn/articles/java8-abstractqueuedsynchronizer#
-
-最后欢迎到这里提PR，我会即使回复
