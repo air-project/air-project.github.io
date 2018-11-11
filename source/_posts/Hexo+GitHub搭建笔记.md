@@ -1,13 +1,13 @@
 ---
-title: Hexo+GitHub 搭建笔记
+title: Hexo+GitHub搭建笔记
 date: 2018-09-20 13:14:58
+commentIssueId: 10
 tags: 
   - hexo
 categories:
 - hexo
 ---
 
- 
 ### Node 安装
 
 下载对应版本的[Node](https://nodejs.org/en/download/),直接下一步安装就行，然后检查
@@ -58,7 +58,7 @@ $ hexo s //启动，打开浏览器http://localhost:4000就能看到了
 INFO  Start processing
 INFO  Hexo is running at http://localhost:4000 . Press Ctrl+C to stop.
 ```
-
+<!-- more -->
 ### Hexo 插件
 
 ```
@@ -74,8 +74,9 @@ $ npm install hexo-generator-category --save
 $ npm install hexo-generator-tag --save
 $ npm install hexo-server --save
 $ npm install hexo-generator-sitemap
+
 ```
-<!-- more -->
+
 
 
 ### Hexo 配置

@@ -1,16 +1,20 @@
 ---
 title: 深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下）
 date: 2018-09-24 18:32:39
+commentIssueId: 11
 tags:
 ---
 
 ## 前言
 
-经过本系列的上半部分JDK1.8 AbstractQueuedSynchronizer的实现分析（上）的解读，相信很多读者已经对AbstractQueuedSynchronizer(下文简称AQS)的独占功能了然于胸,那么这次我们通过对另一个工具类:CountDownLatch的分析来解读AQS的另外一个功能：共享功能。
+经过本系列的上半部分JDK1.8 AbstractQueuedSynchronizer的实现分析（上）的解读，相信很多读者已经对AbstractQueuedSynchronizer(下文简称AQS)的独占功能了然于胸,
+那么这次我们通过对另一个工具类:CountDownLatch的分析来解读AQS的另外一个功能：共享功能。
 
 ### AQS共享功能的实现
 
-在开始解读AQS的共享功能前，我们再重温一下CountDownLatch，CountDownLatch为java.util.concurrent包下的计数器工具类，常被用在多线程环境下，它在初始时需要指定一个计数器的大小，然后可被多个线程并发的实现减1操作，并在计数器为0后调用await方法的线程被唤醒，从而实现多线程间的协作。它在多线程环境下的基本使用方式为：
+在开始解读AQS的共享功能前，我们再重温一下CountDownLatch，CountDownLatch为java.util.concurrent包下的计数器工具类，
+常被用在多线程环境下，它在初始时需要指定一个计数器的大小，然后可被多个线程并发的实现减1操作，并在计数器为0后调用await方法的线程被唤醒，
+从而实现多线程间的协作。它在多线程环境下的基本使用方式为：
  ```
   //main thread
   // 新建一个CountDownLatch，并指制定一个初始大小
