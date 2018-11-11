@@ -91,8 +91,8 @@
 <meta name="description" content="前言经过本系列的上半部分JDK1.8 AbstractQueuedSynchronizer的实现分析（上）的解读，相信很多读者已经对AbstractQueuedSynchronizer(下文简称AQS)的独占功能了然于胸,那么这次我们通过对另一个工具类:CountDownLatch的分析来解读AQS的另外一个功能：共享功能。 AQS共享功能的实现在开始解读AQS的共享功能前，我们再重温一下Coun">
 <meta name="keywords" content="java spring hexo git">
 <meta property="og:type" content="article">
-<meta property="og:title" content="深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下）">
-<meta property="og:url" content="http://yoursite.com/2018/09/24/深度解析Java-8：AbstractQueuedSynchronizer的实现分析（下）/index.html">
+<meta property="og:title" content="深度解析jdk8-AbstractQueuedSynchronizer的实现分析下">
+<meta property="og:url" content="https://air-project.github.io/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析下/index.html">
 <meta property="og:site_name" content="浩汝烟海">
 <meta property="og:description" content="前言经过本系列的上半部分JDK1.8 AbstractQueuedSynchronizer的实现分析（上）的解读，相信很多读者已经对AbstractQueuedSynchronizer(下文简称AQS)的独占功能了然于胸,那么这次我们通过对另一个工具类:CountDownLatch的分析来解读AQS的另外一个功能：共享功能。 AQS共享功能的实现在开始解读AQS的共享功能前，我们再重温一下Coun">
 <meta property="og:locale" content="zh-Hans">
@@ -101,9 +101,9 @@
 <meta property="og:image" content="https://res.infoq.com/articles/java8-abstractqueuedsynchronizer/zh/resources/0815020.png">
 <meta property="og:image" content="https://res.infoq.com/articles/java8-abstractqueuedsynchronizer/zh/resources/0815021.png">
 <meta property="og:image" content="https://res.infoq.com/articles/java8-abstractqueuedsynchronizer/zh/resources/0815022.png">
-<meta property="og:updated_time" content="2018-11-11T05:22:24.687Z">
+<meta property="og:updated_time" content="2018-11-11T09:55:22.446Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下）">
+<meta name="twitter:title" content="深度解析jdk8-AbstractQueuedSynchronizer的实现分析下">
 <meta name="twitter:description" content="前言经过本系列的上半部分JDK1.8 AbstractQueuedSynchronizer的实现分析（上）的解读，相信很多读者已经对AbstractQueuedSynchronizer(下文简称AQS)的独占功能了然于胸,那么这次我们通过对另一个工具类:CountDownLatch的分析来解读AQS的另外一个功能：共享功能。 AQS共享功能的实现在开始解读AQS的共享功能前，我们再重温一下Coun">
 <meta name="twitter:image" content="https://res.infoq.com/articles/java8-abstractqueuedsynchronizer/zh/resources/0815012.png">
 
@@ -135,13 +135,15 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2018/09/24/深度解析Java-8：AbstractQueuedSynchronizer的实现分析（下）/"/>
+  <link rel="canonical" href="https://air-project.github.io/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析下/"/>
 
 
 
 
 
-  <title>深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下） | 浩汝烟海</title>
+  <script src="https://cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+
+  <title>深度解析jdk8-AbstractQueuedSynchronizer的实现分析下 | 浩汝烟海</title>
   
 
 
@@ -304,7 +306,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/09/24/深度解析Java-8：AbstractQueuedSynchronizer的实现分析（下）/">
+    <link itemprop="mainEntityOfPage" href="https://air-project.github.io/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析下/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="air">
@@ -321,7 +323,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下）</h1>
+          <h1 class="post-title" itemprop="name headline">深度解析jdk8-AbstractQueuedSynchronizer的实现分析下</h1>
         
 
         <div class="post-meta">
@@ -407,13 +409,14 @@
       
 
       
-        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>经过本系列的上半部分JDK1.8 AbstractQueuedSynchronizer的实现分析（上）的解读，相信很多读者已经对AbstractQueuedSynchronizer(下文简称AQS)的独占功能了然于胸,那么这次我们通过对另一个工具类:CountDownLatch的分析来解读AQS的另外一个功能：共享功能。</p>
-<h3 id="AQS共享功能的实现"><a href="#AQS共享功能的实现" class="headerlink" title="AQS共享功能的实现"></a>AQS共享功能的实现</h3><p>在开始解读AQS的共享功能前，我们再重温一下CountDownLatch，CountDownLatch为java.util.concurrent包下的计数器工具类，常被用在多线程环境下，它在初始时需要指定一个计数器的大小，然后可被多个线程并发的实现减1操作，并在计数器为0后调用await方法的线程被唤醒，从而实现多线程间的协作。它在多线程环境下的基本使用方式为：<br> <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"> //main thread</span><br><span class="line"> // 新建一个CountDownLatch，并指制定一个初始大小</span><br><span class="line"> CountDownLatch countDownLatch = new CountDownLatch(3);</span><br><span class="line"> // 调用await方法后，main线程将阻塞在这里，直到countDownLatch 中的计数为0 </span><br><span class="line"> countDownLatch.await();</span><br><span class="line"> System.out.println(&quot;over&quot;);</span><br><span class="line"></span><br><span class="line">//thread1</span><br><span class="line">// do something </span><br><span class="line">//...........</span><br><span class="line">//调用countDown方法，将计数减1</span><br><span class="line"> countDownLatch.countDown();</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">//thread2</span><br><span class="line">// do something </span><br><span class="line">//...........</span><br><span class="line">//调用countDown方法，将计数减1</span><br><span class="line"> countDownLatch.countDown();</span><br><span class="line"></span><br><span class="line">  //thread3</span><br><span class="line">// do something </span><br><span class="line">//...........</span><br><span class="line">//调用countDown方法，将计数减1</span><br><span class="line"> countDownLatch.countDown();</span><br></pre></td></tr></table></figure></p>
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>经过本系列的上半部分JDK1.8 AbstractQueuedSynchronizer的实现分析（上）的解读，相信很多读者已经对AbstractQueuedSynchronizer(下文简称AQS)的独占功能了然于胸,<br>那么这次我们通过对另一个工具类:CountDownLatch的分析来解读AQS的另外一个功能：共享功能。</p>
+<h3 id="AQS共享功能的实现"><a href="#AQS共享功能的实现" class="headerlink" title="AQS共享功能的实现"></a>AQS共享功能的实现</h3><p>在开始解读AQS的共享功能前，我们再重温一下CountDownLatch，CountDownLatch为java.util.concurrent包下的计数器工具类，<br>常被用在多线程环境下，它在初始时需要指定一个计数器的大小，然后可被多个线程并发的实现减1操作，并在计数器为0后调用await方法的线程被唤醒，<br>从而实现多线程间的协作。它在多线程环境下的基本使用方式为：</p>
+<a id="more"></a>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"> //main thread</span><br><span class="line"> // 新建一个CountDownLatch，并指制定一个初始大小</span><br><span class="line"> CountDownLatch countDownLatch = new CountDownLatch(3);</span><br><span class="line"> // 调用await方法后，main线程将阻塞在这里，直到countDownLatch 中的计数为0 </span><br><span class="line"> countDownLatch.await();</span><br><span class="line"> System.out.println(&quot;over&quot;);</span><br><span class="line"></span><br><span class="line">//thread1</span><br><span class="line">// do something </span><br><span class="line">//...........</span><br><span class="line">//调用countDown方法，将计数减1</span><br><span class="line"> countDownLatch.countDown();</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">//thread2</span><br><span class="line">// do something </span><br><span class="line">//...........</span><br><span class="line">//调用countDown方法，将计数减1</span><br><span class="line"> countDownLatch.countDown();</span><br><span class="line"></span><br><span class="line">  //thread3</span><br><span class="line">// do something </span><br><span class="line">//...........</span><br><span class="line">//调用countDown方法，将计数减1</span><br><span class="line"> countDownLatch.countDown();</span><br></pre></td></tr></table></figure>
 <p> 注意，线程thread 1,2,3各自调用 countDown后，countDownLatch 的计数为0，await方法返回，控制台输入“over”,在此之前main thread 会一直沉睡。</p>
 <p>可以看到CountDownLatch的作用类似于一个“栏栅”，在CountDownLatch的计数为0前，调用await方法的线程将一直阻塞，直到CountDownLatch计数为0，await方法才会返回，</p>
 <p>而CountDownLatch的countDown()方法则一般由各个线程调用，实现CountDownLatch计数的减1。</p>
 <p>知道了CountDownLatch的基本使用方式，我们就从上述DEMO的第一行new CountDownLatch（3）开始，看看CountDownLatch是怎么实现的。</p>
-<a id="more"></a>
 <p>首先，看下CountDownLatch的构造方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public CountDownLatch(int count) &#123;</span><br><span class="line">    if (count &lt; 0) throw new IllegalArgumentException(&quot;count &lt; 0&quot;);</span><br><span class="line">    this.sync = new Sync(count);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>和ReentrantLock类似，CountDownLatch内部也有一个叫做Sync的内部类，同样也是用它继承了AQS。</p>
 <p>再看下Sync：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Sync(int count) &#123;</span><br><span class="line">    setState(count);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
@@ -466,7 +469,6 @@
 <p>当然，正式因为AQS只是关心“资源在什么条件下可被访问”，所以子类还可以同时使用AQS的共享功能和独占功能的API以实现更为复杂的功能。</p>
 <p>比如：ReentrantReadWriteLock，我们知道ReentrantReadWriteLock的中也有一个叫Sync的内部类继承了AQS，而AQS的队列可以同时存放共享锁和独占锁，对于ReentrantReadWriteLock来说分别代表读锁和写锁，当队列中的头节点为读锁时，代表读操作可以执行，而写操作不能执行，因此请求写操作的线程会被挂起，当读操作依次推出后，写锁成为头节点，请求写操作的线程被唤醒，可以执行写操作，而此时的读请求将被封装成Node放入AQS的队列中。如此往复，实现读写锁的读写交替进行。</p>
 <p>而本系列文章上半部分提到的FutureTask，其实思路也是：封装一个存放线程执行结果的变量A,使用AQS的独占API实现线程对变量A的独占访问，判断规则是，线程没有执行完毕：call()方法没有返回前，不能访问变量A，或者是超时时间没到前不能访问变量A(这就是FutureTask的get方法可以实现获取线程执行结果时，设置超时时间的原因)。<br>原网页地址：<a href="http://www.infoq.com/cn/articles/java8-abstractqueuedsynchronizer#" target="_blank" rel="noopener">http://www.infoq.com/cn/articles/java8-abstractqueuedsynchronizer#</a></p>
-<p>最后欢迎到这里提PR，我会即使回复</p>
 
       
     </div>
@@ -474,6 +476,143 @@
     
     
 
+	 
+		<!doctype html>
+<html>
+<div class="clearfix"></div>
+<br>
+<div id="comments">
+	<div class="post-header bg-">
+	  <div class="submit-comment" style="text-align: left">
+	   <h1>本站评论搭建在 Github Issue 上，请点击<button onclick="window.open('https://github.com/air-project/air-project.github.io/issues/11')" class="btn btn-primary">评论</button>进行评论。</h1>
+	  </div>
+	</div>
+ 
+</div>
+<style type="text/css">
+
+.submit-comment .btn {
+    position: relative;
+    display: inline-block;
+    padding: 6px 12px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+
+.submit-comment .btn-primary {
+    color: #fff;
+    background-color: #f44336;
+    background-image: -webkit-linear-gradient(270deg, ##f44336 0%, #f44336 90%);
+    background-image: linear-gradient(-180deg, ##f44336 0%, #f44336 90%);
+	cursor: pointer; 
+	 
+	border: 1px solid rgba(27,31,35,0.2);
+}
+.timeline-comment-wrapper {
+    margin-top: 0;
+    position: relative;
+    padding-left: 60px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    border-top: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+}
+.timeline-comment-avatar {
+    float: left;
+    margin-left: -60px;
+    border-radius: 3px;
+}
+.avatar-parent-child {
+    position: relative;
+}
+.timeline-comment-wrapper a {
+    color: #0366d6;
+    text-decoration: none;
+    background-color: transparent;
+}
+.timeline-comment-wrapper .avatar {
+    display: inline-block;
+    overflow: hidden;
+    line-height: 1;
+    vertical-align: middle;
+    border-radius: 3px;
+}
+.timeline-comment-wrapper .rounded-1 {
+    border-radius: 3px !important;
+}
+.timeline-comment.current-user {
+    border-color: #c0d3eb;
+}
+.timeline-comment {
+    position: relative;
+    background-color: #fff;
+    border: 1px solid #d1d5da;
+    border-radius: 3px;
+}
+.timeline-comment.current-user .timeline-comment-header {
+    background-color: #f1f8ff;
+    border-bottom-color: #c0d3eb;
+}
+.timeline-comment-header {
+    padding-right: 15px;
+    padding-left: 15px;
+    color: #586069;
+    background-color: #f6f8fa;
+    border-bottom: 1px solid #d1d5da;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+}
+.timeline-comment-header-text {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+.timeline-comment-header h3 {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+.timeline-comment-header-text .post-meta {
+    margin-left: 6px;
+}
+.timeline-comment article p {
+    margin: 0px;
+}
+.text-normal {
+    font-weight: normal !important;
+}
+.f5 {
+    font-size: 14px !important;
+}
+</style>
+<script type="text/javascript">
+  function loadComments(data) {
+    for (var i=0; i<data.length; i++) {
+      var cuser = data[i].user.login;
+      var cuserlink = data[i].user.html_url;
+      var avatarlink = data[i].user.avatar_url;
+      var clink = data[i].html_url;
+      var cbody = data[i].body_html;
+      var cavatarlink = data[i].user.avatar_url;      
+      var cdate = new Date(data[i].created_at);
+      var dopts = { month: 'short', day: 'numeric', year: 'numeric' }
+      $("#comments").append('<div class="timeline-comment-wrapper"><div class="avatar-parent-child timeline-comment-avatar"><a href="' + cuserlink +'"><img width="44" height="44" class="avatar rounded-1" src="' + avatarlink + '"></a></div><div class="timeline-comment current-user"><div class="timeline-comment-header"><h3 class="timeline-comment-header-text text-normal f5"><strong>' + cuser + '</strong><span class="post-meta">' + cdate.toLocaleDateString("en", dopts) + '</span></h3></div><div style="display: block !important; padding: 15px;"><article class="post-content">' + cbody + '</article></div></div></div>');
+    }
+  }
+  var url="https://api.github.com/repos/air-project/air-project.github.io/issues/"+11+"/comments";
+    console.log(url);
+  $.ajax(url, {
+    headers: {Accept: "application/vnd.github.v3.html+json"},
+    dataType: "json",
+    success: function(msg){
+      console.log(msg);
+      loadComments(msg);
+   }
+  });
+</script>
+</html>
 	 
 	
 	
@@ -519,7 +658,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="http://yoursite.com/2018/09/24/深度解析Java-8：AbstractQueuedSynchronizer的实现分析（下）/" title="深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下）">http://yoursite.com/2018/09/24/深度解析Java-8：AbstractQueuedSynchronizer的实现分析（下）/</a>
+    <a href="https://air-project.github.io/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析下/" title="深度解析jdk8-AbstractQueuedSynchronizer的实现分析下">https://air-project.github.io/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析下/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>
@@ -541,8 +680,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/09/24/深度解析Java-8：JDK1-8-AbstractQueuedSynchronizer的实现分析（上）/" rel="next" title="深度解析Java 8：JDK1.8 AbstractQueuedSynchronizer的实现分析（上）">
-                <i class="fa fa-chevron-left"></i> 深度解析Java 8：JDK1.8 AbstractQueuedSynchronizer的实现分析（上）
+              <a href="/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析上/" rel="next" title="深度解析jdk8-AbstractQueuedSynchronizer的实现分析上">
+                <i class="fa fa-chevron-left"></i> 深度解析jdk8-AbstractQueuedSynchronizer的实现分析上
               </a>
             
           </div>
@@ -550,10 +689,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2018/11/11/aaaabbb/" rel="prev" title="aaaabbb">
-                aaaabbb <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -638,7 +773,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-count">3</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>

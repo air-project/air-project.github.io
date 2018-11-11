@@ -91,8 +91,8 @@
 <meta name="description" content="前言Java中的FutureTask作为可异步执行任务并可获取执行结果而被大家所熟知。通常可以使用future.get()来获取线程的执行结果，在线程执行结束之前，get方法会一直阻塞状态，直到call()返回，其优点是使用线程异步执行任务的情况下还可以获取到线程的执行结果，但是FutureTask的以上功能却是依靠通过一个叫AbstractQueuedSynchronizer的类来实现，至少在J">
 <meta name="keywords" content="java spring hexo git">
 <meta property="og:type" content="article">
-<meta property="og:title" content="深度解析Java 8：JDK1.8 AbstractQueuedSynchronizer的实现分析（上）">
-<meta property="og:url" content="http://yoursite.com/2018/09/24/深度解析Java-8：JDK1-8-AbstractQueuedSynchronizer的实现分析（上）/index.html">
+<meta property="og:title" content="深度解析jdk8-AbstractQueuedSynchronizer的实现分析上">
+<meta property="og:url" content="https://air-project.github.io/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析上/index.html">
 <meta property="og:site_name" content="浩汝烟海">
 <meta property="og:description" content="前言Java中的FutureTask作为可异步执行任务并可获取执行结果而被大家所熟知。通常可以使用future.get()来获取线程的执行结果，在线程执行结束之前，get方法会一直阻塞状态，直到call()返回，其优点是使用线程异步执行任务的情况下还可以获取到线程的执行结果，但是FutureTask的以上功能却是依靠通过一个叫AbstractQueuedSynchronizer的类来实现，至少在J">
 <meta property="og:locale" content="zh-Hans">
@@ -102,9 +102,9 @@
 <meta property="og:image" content="https://res.infoq.com/articles/jdk1.8-abstractqueuedsynchronizer/zh/resources/0730009.png">
 <meta property="og:image" content="https://res.infoq.com/articles/jdk1.8-abstractqueuedsynchronizer/zh/resources/0730011.png">
 <meta property="og:image" content="https://res.infoq.com/articles/jdk1.8-abstractqueuedsynchronizer/zh/resources/0730015.png">
-<meta property="og:updated_time" content="2018-11-11T05:22:24.689Z">
+<meta property="og:updated_time" content="2018-11-11T09:55:05.522Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="深度解析Java 8：JDK1.8 AbstractQueuedSynchronizer的实现分析（上）">
+<meta name="twitter:title" content="深度解析jdk8-AbstractQueuedSynchronizer的实现分析上">
 <meta name="twitter:description" content="前言Java中的FutureTask作为可异步执行任务并可获取执行结果而被大家所熟知。通常可以使用future.get()来获取线程的执行结果，在线程执行结束之前，get方法会一直阻塞状态，直到call()返回，其优点是使用线程异步执行任务的情况下还可以获取到线程的执行结果，但是FutureTask的以上功能却是依靠通过一个叫AbstractQueuedSynchronizer的类来实现，至少在J">
 <meta name="twitter:image" content="https://res.infoq.com/articles/jdk1.8-abstractqueuedsynchronizer/zh/resources/0730000.png">
 
@@ -136,13 +136,15 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2018/09/24/深度解析Java-8：JDK1-8-AbstractQueuedSynchronizer的实现分析（上）/"/>
+  <link rel="canonical" href="https://air-project.github.io/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析上/"/>
 
 
 
 
 
-  <title>深度解析Java 8：JDK1.8 AbstractQueuedSynchronizer的实现分析（上） | 浩汝烟海</title>
+  <script src="https://cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+
+  <title>深度解析jdk8-AbstractQueuedSynchronizer的实现分析上 | 浩汝烟海</title>
   
 
 
@@ -305,7 +307,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/09/24/深度解析Java-8：JDK1-8-AbstractQueuedSynchronizer的实现分析（上）/">
+    <link itemprop="mainEntityOfPage" href="https://air-project.github.io/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析上/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="air">
@@ -322,7 +324,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">深度解析Java 8：JDK1.8 AbstractQueuedSynchronizer的实现分析（上）</h1>
+          <h1 class="post-title" itemprop="name headline">深度解析jdk8-AbstractQueuedSynchronizer的实现分析上</h1>
         
 
         <div class="post-meta">
@@ -408,10 +410,9 @@
       
 
       
-        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Java中的FutureTask作为可异步执行任务并可获取执行结果而被大家所熟知。通常可以使用future.get()来获取线程的执行结果，在线程执行结束之前，get方法会一直阻塞状态，直到call()返回，其优点是使用线程异步执行任务的情况下还可以获取到线程的执行结果，但是FutureTask的以上功能却是依靠通过一个叫AbstractQueuedSynchronizer的类来实现，至少在JDK1.5、JDK1.6版本是这样的（从1.7开始FutureTask已经被其作者Doug Lea修改为不再依赖AbstractQueuedSynchronizer实现了，这是JDK1.7的变化之一）。但是AbstractQueuedSynchronizer在JDK1.8中还有如下图所示的众多子类：<br><img src="https://res.infoq.com/articles/jdk1.8-abstractqueuedsynchronizer/zh/resources/0730000.png" alt=""><br>这些JDK中的工具类或多或少都被大家用过不止一次，比如ReentrantLock，我们知道ReentrantLock的功能是实现代码段的并发访问控制，也就是通常意义上所说的锁，在没有看到AbstractQueuedSynchronizer前，可能会以为它的实现是通过类似于synchronized，通过对对象加锁来实现的。但事实上它仅仅是一个工具类！没有使用更“高级”的机器指令，不是关键字，也不依靠JDK编译时的特殊处理，仅仅作为一个普普通通的类就完成了代码块的并发访问控制，这就更让人疑问它怎么实现的代码块的并发访问控制的了。那就让我们一起来仔细看下Doug Lea怎么去实现的这个锁。为了方便，本文中使用AQS代替AbstractQueuedSynchronizer。</p>
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Java中的FutureTask作为可异步执行任务并可获取执行结果而被大家所熟知。通常可以使用future.get()来获取线程的执行结果，在线程执行结束之前，get方法会一直阻塞状态，<br>直到call()返回，其优点是使用线程异步执行任务的情况下还可以获取到线程的执行结果，但是FutureTask的以上功能却是依靠通过一个叫AbstractQueuedSynchronizer的类来实现，<br>至少在JDK1.5、JDK1.6版本是这样的（从1.7开始FutureTask已经被其作者Doug Lea修改为不再依赖AbstractQueuedSynchronizer实现了，这是JDK1.7的变化之一）。<br><a id="more"></a><br>但是AbstractQueuedSynchronizer在JDK1.8中还有如下图所示的众多子类：<br><img src="https://res.infoq.com/articles/jdk1.8-abstractqueuedsynchronizer/zh/resources/0730000.png" alt=""><br>这些JDK中的工具类或多或少都被大家用过不止一次，比如ReentrantLock，我们知道ReentrantLock的功能是实现代码段的并发访问控制，<br>也就是通常意义上所说的锁，在没有看到AbstractQueuedSynchronizer前，可能会以为它的实现是通过类似于synchronized，通过对对象加锁来实现的。<br>但事实上它仅仅是一个工具类！没有使用更“高级”的机器指令，不是关键字，也不依靠JDK编译时的特殊处理，仅仅作为一个普普通通的类就完成了代码块的并发访问控制，<br>这就更让人疑问它怎么实现的代码块的并发访问控制的了。那就让我们一起来仔细看下Doug Lea怎么去实现的这个锁。为了方便，本文中使用AQS代替AbstractQueuedSynchronizer。</p>
 <h2 id="细说AQS"><a href="#细说AQS" class="headerlink" title="细说AQS"></a>细说AQS</h2><p>在深入分析AQS之前，我想先从AQS的功能上说明下AQS，站在使用者的角度，AQS的功能可以分为两类：独占功能和共享功能，它的所有子类中，要么实现并使用了它独占功能的API，要么使用了共享锁的功能，而不会同时使用两套API，即便是它最有名的子类ReentrantReadWriteLock，也是通过两个内部类：读锁和写锁，分别实现的两套API来实现的，为什么这么做，后面我们再分析，到目前为止，我们只需要明白AQS在功能上有独占控制和共享控制两种功能即可。</p>
 <h3 id="独占锁"><a href="#独占锁" class="headerlink" title="独占锁"></a>独占锁</h3><p>在真正对解读AQS之前，我想先从使用了它独占控制功能的子类ReentrantLock说起，分析ReentrantLock的同时看一看AQS的实现，再推理出AQS独特的设计思路和实现方式。最后，再看其共享控制功能的实现。<br>对于ReentrantLock，使用过的同学应该都知道，通常是这么用它的：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">reentrantLock.lock()</span><br><span class="line">//do something</span><br><span class="line">reentrantLock.unlock()</span><br></pre></td></tr></table></figure></p>
-<a id="more"></a>
 <p>ReentrantLock会保证 do something在同一时间只有一个线程在执行这段代码，或者说，同一时刻只有一个线程的lock方法会返回。其余线程会被挂起，直到获取锁。从这里可以看出，其实ReentrantLock实现的就是一个独占锁的功能：有且只有一个线程获取到锁，其余线程全部挂起，直到该拥有锁的线程释放锁，被挂起的线程被唤醒重新开始竞争锁。没错，ReentrantLock使用的就是AQS的独占API实现的。<br>那现在我们就从ReentrantLock的实现开始一起看看重入锁是怎么实现的。<br>首先看lock方法：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public void lock() &#123;</span><br><span class="line">    sync.lock();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>如FutureTask（JDK1.6）一样，ReentrantLock内部有代理类完成具体操作，ReentrantLock只是封装了统一的一套API而已。值得注意的是，使用过ReentrantLock的同学应该知道，ReentrantLock又分为公平锁和非公平锁，所以，ReentrantLock内部只有两个sync的实现：<br><img src="https://res.infoq.com/articles/jdk1.8-abstractqueuedsynchronizer/zh/resources/0730002.png" alt=""><br>公平锁：每个线程抢占锁的顺序为先后调用lock方法的顺序依次获取锁，类似于排队吃饭。<br>非公平锁：每个线程抢占锁的顺序不定，谁运气好，谁就获取到锁，和调用lock方法的先后顺序无关，类似于堵车时，加塞的那些XXXX。<br>到这里，通过ReentrantLock的功能和锁的所谓排不排队的方式，我们是否可以这么猜测ReentrantLock或者AQS的实现（现在不清楚谁去实现这些功能）：有那么一个被volatile修饰的标志位叫做key，用来表示有没有线程拿走了锁，或者说，锁还存不存在，还需要一个线程安全的队列，维护一堆被挂起的线程，以至于当锁被归还时，能通知到这些被挂起的线程，可以来竞争获取锁了。<br>至于公平锁和非公平锁，唯一的区别是在获取锁的时候是直接去获取锁，还是进入队列排队的问题了。为了验证我们的猜想，我们继续看一下ReentrantLock中公平锁的实现：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">final void lock() &#123;</span><br><span class="line">        acquire(1);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
@@ -444,7 +445,6 @@
 <p>而对于公平锁：则是老老实实的开始就走AQS的流程排队获取锁。如果前面有人调用过其lock方法，则排在队列中前面，也就更有机会更早的获取锁，从而达到“公平”的目的。</p>
 <h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>这篇文章，我们从ReentrantLock出发，完整的分析了AQS独占功能的API及内部实现，总的来说，思路其实并不复杂，还是使用的标志位+队列的方式，记录获取锁、竞争锁、释放锁等一系列锁的状态，或许用更准确一点的描述的话，应该是使用的标志位+队列的方式，记录锁、竞争、释放等一系列独占的状态，因为站在AQS的层面state可以表示锁，也可以表示其他状态，它并不关心它的子类把它变成一个什么工具类，而只是提供了一套维护一个独占状态。甚至，最准确的是AQS只是维护了一个状态，因为，别忘了，它还有一套共享状态的API，所以，AQS只是维护一个状态，一个控制各个线程何时可以访问的状态，它只对状态负责，而这个状态表示什么含义，由子类自己去定义。</p>
 <p>原网页地址：<a href="http://www.infoq.com/cn/articles/jdk1.8-abstractqueuedsynchronizer" target="_blank" rel="noopener">http://www.infoq.com/cn/articles/jdk1.8-abstractqueuedsynchronizer</a></p>
-<p>最后欢迎到<a href="https://github.com/air-project/air-project.github.io/issues" target="_blank" rel="noopener">这里</a>提PR，我会即使回复</p>
 
       
     </div>
@@ -452,6 +452,143 @@
     
     
 
+	 
+		<!doctype html>
+<html>
+<div class="clearfix"></div>
+<br>
+<div id="comments">
+	<div class="post-header bg-">
+	  <div class="submit-comment" style="text-align: left">
+	   <h1>本站评论搭建在 Github Issue 上，请点击<button onclick="window.open('https://github.com/air-project/air-project.github.io/issues/12')" class="btn btn-primary">评论</button>进行评论。</h1>
+	  </div>
+	</div>
+ 
+</div>
+<style type="text/css">
+
+.submit-comment .btn {
+    position: relative;
+    display: inline-block;
+    padding: 6px 12px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+
+.submit-comment .btn-primary {
+    color: #fff;
+    background-color: #f44336;
+    background-image: -webkit-linear-gradient(270deg, ##f44336 0%, #f44336 90%);
+    background-image: linear-gradient(-180deg, ##f44336 0%, #f44336 90%);
+	cursor: pointer; 
+	 
+	border: 1px solid rgba(27,31,35,0.2);
+}
+.timeline-comment-wrapper {
+    margin-top: 0;
+    position: relative;
+    padding-left: 60px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    border-top: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+}
+.timeline-comment-avatar {
+    float: left;
+    margin-left: -60px;
+    border-radius: 3px;
+}
+.avatar-parent-child {
+    position: relative;
+}
+.timeline-comment-wrapper a {
+    color: #0366d6;
+    text-decoration: none;
+    background-color: transparent;
+}
+.timeline-comment-wrapper .avatar {
+    display: inline-block;
+    overflow: hidden;
+    line-height: 1;
+    vertical-align: middle;
+    border-radius: 3px;
+}
+.timeline-comment-wrapper .rounded-1 {
+    border-radius: 3px !important;
+}
+.timeline-comment.current-user {
+    border-color: #c0d3eb;
+}
+.timeline-comment {
+    position: relative;
+    background-color: #fff;
+    border: 1px solid #d1d5da;
+    border-radius: 3px;
+}
+.timeline-comment.current-user .timeline-comment-header {
+    background-color: #f1f8ff;
+    border-bottom-color: #c0d3eb;
+}
+.timeline-comment-header {
+    padding-right: 15px;
+    padding-left: 15px;
+    color: #586069;
+    background-color: #f6f8fa;
+    border-bottom: 1px solid #d1d5da;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+}
+.timeline-comment-header-text {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+.timeline-comment-header h3 {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+.timeline-comment-header-text .post-meta {
+    margin-left: 6px;
+}
+.timeline-comment article p {
+    margin: 0px;
+}
+.text-normal {
+    font-weight: normal !important;
+}
+.f5 {
+    font-size: 14px !important;
+}
+</style>
+<script type="text/javascript">
+  function loadComments(data) {
+    for (var i=0; i<data.length; i++) {
+      var cuser = data[i].user.login;
+      var cuserlink = data[i].user.html_url;
+      var avatarlink = data[i].user.avatar_url;
+      var clink = data[i].html_url;
+      var cbody = data[i].body_html;
+      var cavatarlink = data[i].user.avatar_url;      
+      var cdate = new Date(data[i].created_at);
+      var dopts = { month: 'short', day: 'numeric', year: 'numeric' }
+      $("#comments").append('<div class="timeline-comment-wrapper"><div class="avatar-parent-child timeline-comment-avatar"><a href="' + cuserlink +'"><img width="44" height="44" class="avatar rounded-1" src="' + avatarlink + '"></a></div><div class="timeline-comment current-user"><div class="timeline-comment-header"><h3 class="timeline-comment-header-text text-normal f5"><strong>' + cuser + '</strong><span class="post-meta">' + cdate.toLocaleDateString("en", dopts) + '</span></h3></div><div style="display: block !important; padding: 15px;"><article class="post-content">' + cbody + '</article></div></div></div>');
+    }
+  }
+  var url="https://api.github.com/repos/air-project/air-project.github.io/issues/"+12+"/comments";
+    console.log(url);
+  $.ajax(url, {
+    headers: {Accept: "application/vnd.github.v3.html+json"},
+    dataType: "json",
+    success: function(msg){
+      console.log(msg);
+      loadComments(msg);
+   }
+  });
+</script>
+</html>
 	 
 	
 	
@@ -497,7 +634,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="http://yoursite.com/2018/09/24/深度解析Java-8：JDK1-8-AbstractQueuedSynchronizer的实现分析（上）/" title="深度解析Java 8：JDK1.8 AbstractQueuedSynchronizer的实现分析（上）">http://yoursite.com/2018/09/24/深度解析Java-8：JDK1-8-AbstractQueuedSynchronizer的实现分析（上）/</a>
+    <a href="https://air-project.github.io/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析上/" title="深度解析jdk8-AbstractQueuedSynchronizer的实现分析上">https://air-project.github.io/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析上/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>
@@ -529,8 +666,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2018/09/24/深度解析Java-8：AbstractQueuedSynchronizer的实现分析（下）/" rel="prev" title="深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下）">
-                深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下） <i class="fa fa-chevron-right"></i>
+              <a href="/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析下/" rel="prev" title="深度解析jdk8-AbstractQueuedSynchronizer的实现分析下">
+                深度解析jdk8-AbstractQueuedSynchronizer的实现分析下 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -616,7 +753,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-count">3</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>

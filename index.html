@@ -92,7 +92,7 @@
 <meta name="keywords" content="java spring hexo git">
 <meta property="og:type" content="website">
 <meta property="og:title" content="浩汝烟海">
-<meta property="og:url" content="http://yoursite.com/index.html">
+<meta property="og:url" content="https://air-project.github.io/index.html">
 <meta property="og:site_name" content="浩汝烟海">
 <meta property="og:description" content="Stay hungry,stay foolish.Keep moving on">
 <meta property="og:locale" content="zh-Hans">
@@ -128,7 +128,7 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/"/>
+  <link rel="canonical" href="https://air-project.github.io/"/>
 
 
 
@@ -298,7 +298,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/11/11/aaaabbb/">
+    <link itemprop="mainEntityOfPage" href="https://air-project.github.io/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析下/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="air">
@@ -317,162 +317,7 @@
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2018/11/11/aaaabbb/" itemprop="url">aaaabbb</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-11-11T12:15:28+08:00">
-                2018-11-11
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-            <div class="post-wordcount">
-              
-                
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-file-word-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">字数统计&#58;</span>
-                
-                <span title="字数统计">
-                  0
-                </span>
-              
-
-              
-                <span class="post-meta-divider">|</span>
-              
-
-              
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-clock-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
-                
-                <span title="阅读时长">
-                  1
-                </span>
-              
-            </div>
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            
-          
-        
-      
-    </div>
-    
-    
-    
-
-	 
-	
-	
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-
-  </article>
-
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/09/24/深度解析Java-8：AbstractQueuedSynchronizer的实现分析（下）/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="air">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/pic_hd.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="浩汝烟海">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/09/24/深度解析Java-8：AbstractQueuedSynchronizer的实现分析（下）/" itemprop="url">深度解析Java 8：AbstractQueuedSynchronizer的实现分析（下）</a></h1>
+                <a class="post-title-link" href="/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析下/" itemprop="url">深度解析jdk8-AbstractQueuedSynchronizer的实现分析下</a></h1>
         
 
         <div class="post-meta">
@@ -554,15 +399,11 @@
 
       
         
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>经过本系列的上半部分JDK1.8 AbstractQueuedSynchronizer的实现分析（上）的解读，相信很多读者已经对AbstractQueuedSynchronizer(下文简称AQS)的独占功能了然于胸,那么这次我们通过对另一个工具类:CountDownLatch的分析来解读AQS的另外一个功能：共享功能。</p>
-<h3 id="AQS共享功能的实现"><a href="#AQS共享功能的实现" class="headerlink" title="AQS共享功能的实现"></a>AQS共享功能的实现</h3><p>在开始解读AQS的共享功能前，我们再重温一下CountDownLatch，CountDownLatch为java.util.concurrent包下的计数器工具类，常被用在多线程环境下，它在初始时需要指定一个计数器的大小，然后可被多个线程并发的实现减1操作，并在计数器为0后调用await方法的线程被唤醒，从而实现多线程间的协作。它在多线程环境下的基本使用方式为：<br> <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"> //main thread</span><br><span class="line"> // 新建一个CountDownLatch，并指制定一个初始大小</span><br><span class="line"> CountDownLatch countDownLatch = new CountDownLatch(3);</span><br><span class="line"> // 调用await方法后，main线程将阻塞在这里，直到countDownLatch 中的计数为0 </span><br><span class="line"> countDownLatch.await();</span><br><span class="line"> System.out.println(&quot;over&quot;);</span><br><span class="line"></span><br><span class="line">//thread1</span><br><span class="line">// do something </span><br><span class="line">//...........</span><br><span class="line">//调用countDown方法，将计数减1</span><br><span class="line"> countDownLatch.countDown();</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">//thread2</span><br><span class="line">// do something </span><br><span class="line">//...........</span><br><span class="line">//调用countDown方法，将计数减1</span><br><span class="line"> countDownLatch.countDown();</span><br><span class="line"></span><br><span class="line">  //thread3</span><br><span class="line">// do something </span><br><span class="line">//...........</span><br><span class="line">//调用countDown方法，将计数减1</span><br><span class="line"> countDownLatch.countDown();</span><br></pre></td></tr></table></figure></p>
-<p> 注意，线程thread 1,2,3各自调用 countDown后，countDownLatch 的计数为0，await方法返回，控制台输入“over”,在此之前main thread 会一直沉睡。</p>
-<p>可以看到CountDownLatch的作用类似于一个“栏栅”，在CountDownLatch的计数为0前，调用await方法的线程将一直阻塞，直到CountDownLatch计数为0，await方法才会返回，</p>
-<p>而CountDownLatch的countDown()方法则一般由各个线程调用，实现CountDownLatch计数的减1。</p>
-<p>知道了CountDownLatch的基本使用方式，我们就从上述DEMO的第一行new CountDownLatch（3）开始，看看CountDownLatch是怎么实现的。</p>
+          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>经过本系列的上半部分JDK1.8 AbstractQueuedSynchronizer的实现分析（上）的解读，相信很多读者已经对AbstractQueuedSynchronizer(下文简称AQS)的独占功能了然于胸,<br>那么这次我们通过对另一个工具类:CountDownLatch的分析来解读AQS的另外一个功能：共享功能。</p>
+<h3 id="AQS共享功能的实现"><a href="#AQS共享功能的实现" class="headerlink" title="AQS共享功能的实现"></a>AQS共享功能的实现</h3><p>在开始解读AQS的共享功能前，我们再重温一下CountDownLatch，CountDownLatch为java.util.concurrent包下的计数器工具类，<br>常被用在多线程环境下，它在初始时需要指定一个计数器的大小，然后可被多个线程并发的实现减1操作，并在计数器为0后调用await方法的线程被唤醒，<br>从而实现多线程间的协作。它在多线程环境下的基本使用方式为：</p>
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2018/09/24/深度解析Java-8：AbstractQueuedSynchronizer的实现分析（下）/#more" rel="contents">
+            <a class="btn" href="/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析下/#more" rel="contents">
               阅读全文 &raquo;
             </a>
           </div>
@@ -618,7 +459,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/09/24/深度解析Java-8：JDK1-8-AbstractQueuedSynchronizer的实现分析（上）/">
+    <link itemprop="mainEntityOfPage" href="https://air-project.github.io/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析上/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="air">
@@ -637,7 +478,7 @@
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2018/09/24/深度解析Java-8：JDK1-8-AbstractQueuedSynchronizer的实现分析（上）/" itemprop="url">深度解析Java 8：JDK1.8 AbstractQueuedSynchronizer的实现分析（上）</a></h1>
+                <a class="post-title-link" href="/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析上/" itemprop="url">深度解析jdk8-AbstractQueuedSynchronizer的实现分析上</a></h1>
         
 
         <div class="post-meta">
@@ -719,12 +560,10 @@
 
       
         
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Java中的FutureTask作为可异步执行任务并可获取执行结果而被大家所熟知。通常可以使用future.get()来获取线程的执行结果，在线程执行结束之前，get方法会一直阻塞状态，直到call()返回，其优点是使用线程异步执行任务的情况下还可以获取到线程的执行结果，但是FutureTask的以上功能却是依靠通过一个叫AbstractQueuedSynchronizer的类来实现，至少在JDK1.5、JDK1.6版本是这样的（从1.7开始FutureTask已经被其作者Doug Lea修改为不再依赖AbstractQueuedSynchronizer实现了，这是JDK1.7的变化之一）。但是AbstractQueuedSynchronizer在JDK1.8中还有如下图所示的众多子类：<br><img src="https://res.infoq.com/articles/jdk1.8-abstractqueuedsynchronizer/zh/resources/0730000.png" alt=""><br>这些JDK中的工具类或多或少都被大家用过不止一次，比如ReentrantLock，我们知道ReentrantLock的功能是实现代码段的并发访问控制，也就是通常意义上所说的锁，在没有看到AbstractQueuedSynchronizer前，可能会以为它的实现是通过类似于synchronized，通过对对象加锁来实现的。但事实上它仅仅是一个工具类！没有使用更“高级”的机器指令，不是关键字，也不依靠JDK编译时的特殊处理，仅仅作为一个普普通通的类就完成了代码块的并发访问控制，这就更让人疑问它怎么实现的代码块的并发访问控制的了。那就让我们一起来仔细看下Doug Lea怎么去实现的这个锁。为了方便，本文中使用AQS代替AbstractQueuedSynchronizer。</p>
-<h2 id="细说AQS"><a href="#细说AQS" class="headerlink" title="细说AQS"></a>细说AQS</h2><p>在深入分析AQS之前，我想先从AQS的功能上说明下AQS，站在使用者的角度，AQS的功能可以分为两类：独占功能和共享功能，它的所有子类中，要么实现并使用了它独占功能的API，要么使用了共享锁的功能，而不会同时使用两套API，即便是它最有名的子类ReentrantReadWriteLock，也是通过两个内部类：读锁和写锁，分别实现的两套API来实现的，为什么这么做，后面我们再分析，到目前为止，我们只需要明白AQS在功能上有独占控制和共享控制两种功能即可。</p>
-<h3 id="独占锁"><a href="#独占锁" class="headerlink" title="独占锁"></a>独占锁</h3><p>在真正对解读AQS之前，我想先从使用了它独占控制功能的子类ReentrantLock说起，分析ReentrantLock的同时看一看AQS的实现，再推理出AQS独特的设计思路和实现方式。最后，再看其共享控制功能的实现。<br>对于ReentrantLock，使用过的同学应该都知道，通常是这么用它的：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">reentrantLock.lock()</span><br><span class="line">//do something</span><br><span class="line">reentrantLock.unlock()</span><br></pre></td></tr></table></figure></p>
+          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Java中的FutureTask作为可异步执行任务并可获取执行结果而被大家所熟知。通常可以使用future.get()来获取线程的执行结果，在线程执行结束之前，get方法会一直阻塞状态，<br>直到call()返回，其优点是使用线程异步执行任务的情况下还可以获取到线程的执行结果，但是FutureTask的以上功能却是依靠通过一个叫AbstractQueuedSynchronizer的类来实现，<br>至少在JDK1.5、JDK1.6版本是这样的（从1.7开始FutureTask已经被其作者Doug Lea修改为不再依赖AbstractQueuedSynchronizer实现了，这是JDK1.7的变化之一）。<br></p>
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2018/09/24/深度解析Java-8：JDK1-8-AbstractQueuedSynchronizer的实现分析（上）/#more" rel="contents">
+            <a class="btn" href="/2018/09/24/深度解析jdk8-AbstractQueuedSynchronizer的实现分析上/#more" rel="contents">
               阅读全文 &raquo;
             </a>
           </div>
@@ -780,7 +619,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/09/20/Hexo+GitHub搭建笔记/">
+    <link itemprop="mainEntityOfPage" href="https://air-project.github.io/2018/09/20/Hexo+GitHub搭建笔记/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="air">
@@ -908,7 +747,6 @@
 <h3 id="Git-安装"><a href="#Git-安装" class="headerlink" title="Git 安装"></a>Git 安装</h3><p>下载对应版本的<a href="https://git-scm.com/downloads" target="_blank" rel="noopener">Git</a>,直接下一步安装就行，然后检查</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ git --version</span><br><span class="line">git version 2.15.1.windows.2</span><br></pre></td></tr></table></figure>
 <h3 id="Hexo-安装"><a href="#Hexo-安装" class="headerlink" title="Hexo 安装"></a>Hexo 安装</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">$ mkdir hexo</span><br><span class="line">$ <span class="built_in">cd</span> hexo</span><br><span class="line">$ npm install hexo -g</span><br><span class="line">$ hexo -v</span><br><span class="line">hexo: 3.7.1</span><br><span class="line">hexo-cli: 1.1.0</span><br><span class="line">os: Windows_NT 10.0.17134 win32 x64</span><br><span class="line">http_parser: 2.8.0</span><br><span class="line">node: 10.10.0</span><br><span class="line">v8: 6.8.275.30-node.24</span><br><span class="line">uv: 1.23.0</span><br><span class="line">zlib: 1.2.11</span><br><span class="line">ares: 1.14.0</span><br><span class="line">modules: 64</span><br><span class="line">nghttp2: 1.33.0</span><br><span class="line">napi: 3</span><br><span class="line">openssl: 1.1.0i</span><br><span class="line">icu: 62.1</span><br><span class="line">unicode: 11.0</span><br><span class="line">cldr: 33.1</span><br><span class="line">tz: 2018e</span><br><span class="line"></span><br><span class="line"> </span><br><span class="line">$ hexo s //启动，打开浏览器http://localhost:4000就能看到了</span><br><span class="line">INFO  Start processing</span><br><span class="line">INFO  Hexo is running at http://localhost:4000 . Press Ctrl+C to stop.</span><br></pre></td></tr></table></figure>
-<h3 id="Hexo-插件"><a href="#Hexo-插件" class="headerlink" title="Hexo 插件"></a>Hexo 插件</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">部署到Git,订阅,统计,站内搜索等</span><br><span class="line">$ npm install hexo-deployer-git --save</span><br><span class="line">$ npm install hexo-generator-feed --save</span><br><span class="line">$ npm install hexo-wordcount --save</span><br><span class="line">$ npm install hexo-generator-search --save</span><br><span class="line">$ npm install hexo-asset-image --save</span><br><span class="line">$ npm install hexo-generator-index --save</span><br><span class="line">$ npm install hexo-generator-archive --save</span><br><span class="line">$ npm install hexo-generator-category --save</span><br><span class="line">$ npm install hexo-generator-tag --save</span><br><span class="line">$ npm install hexo-server --save</span><br><span class="line">$ npm install hexo-generator-sitemap</span><br></pre></td></tr></table></figure>
           <!--noindex-->
           <div class="post-button text-center">
             <a class="btn" href="/2018/09/20/Hexo+GitHub搭建笔记/#more" rel="contents">
@@ -1004,7 +842,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-count">3</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
