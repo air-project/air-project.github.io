@@ -298,6 +298,188 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://air-project.github.io/2018/11/11/BlockingQueue翻译/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="air">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/pic_hd.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浩汝烟海">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/11/11/BlockingQueue翻译/" itemprop="url">BlockingQueue翻译</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-11-11T23:02:51+08:00">
+                2018-11-11
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/源码/" itemprop="url" rel="index">
+                    <span itemprop="name">源码</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  2.8k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  13
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <h4 id="翻译"><a href="#翻译" class="headerlink" title="翻译"></a>翻译</h4><h5 id="类注释"><a href="#类注释" class="headerlink" title="类注释"></a>类注释</h5> <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * A &#123;@link java.util.Queue&#125; that additionally supports operations</span><br><span class="line"> * that wait for the queue to become non-empty when retrieving an</span><br><span class="line"> * element, and wait for space to become available in the queue when</span><br><span class="line"> * storing an element.</span><br><span class="line"> </span><br><span class="line"> * A Queue额外支持在检索元素时等待队列变为非空和</span><br><span class="line"> 在存储元素时等待队列中的空间变得可用的操作</span><br><span class="line"> </span><br><span class="line"> * &#123;@code BlockingQueue&#125; methods come in four forms, with different ways</span><br><span class="line"> * of handling operations that cannot be satisfied immediately, but may be</span><br><span class="line"> * satisfied at some point in the future:  </span><br><span class="line"> </span><br><span class="line">  BlockingQueue方法有四种形式，具有不同的操作方式，不能立即满足，但可能在将来的某个时间点满足</span><br><span class="line">  </span><br><span class="line"> * one throws an exception, the second returns a special value (either</span><br><span class="line"> * &#123;@code null&#125; or &#123;@code false&#125;, depending on the operation), the third</span><br><span class="line"> * blocks the current thread indefinitely until the operation can succeed,</span><br><span class="line"> * and the fourth blocks for only a given maximum time limit before giving</span><br><span class="line"> * up.  </span><br><span class="line"> 一个抛出异常，第二个返回一个特殊值（ null或false ，具体取决于操作），第三个程序将无限期地阻止当前线程，直到操作成功为止，</span><br><span class="line"> 而第四个程序块在放弃之前只有给定的最大时限。</span><br><span class="line">  </span><br><span class="line"> </span><br><span class="line"> *</span><br><span class="line"> * A &#123;@code BlockingQueue&#125; does not accept &#123;@code null&#125; elements.</span><br><span class="line"> * Implementations throw &#123;@code NullPointerException&#125; on attempts</span><br><span class="line"> * to &#123;@code add&#125;, &#123;@code put&#125; or &#123;@code offer&#125; a &#123;@code null&#125;.  A</span><br><span class="line"> * &#123;@code null&#125; is used as a sentinel value to indicate failure of</span><br><span class="line"> * &#123;@code poll&#125; operations.</span><br><span class="line"> </span><br><span class="line">  A BlockingQueue不接受null元素。 实现抛出NullPointerException上尝试add </span><br><span class="line">  put或offer一个null 。 A null用作哨兵值以指示poll操作失败。</span><br><span class="line"> </span><br><span class="line"> *</span><br><span class="line"> * A &#123;@code BlockingQueue&#125; may be capacity bounded. At any given</span><br><span class="line"> * time it may have a &#123;@code remainingCapacity&#125; beyond which no</span><br><span class="line"> * additional elements can be &#123;@code put&#125; without blocking.</span><br><span class="line"> * A &#123;@code BlockingQueue&#125; without any intrinsic capacity constraints always</span><br><span class="line"> * reports a remaining capacity of &#123;@code Integer.MAX_VALUE&#125;.</span><br><span class="line"> * </span><br><span class="line">   A BlockingQueue可能是容量有限的。 在任何给定的时间它可能有一个remainingCapacity超过其中没有额外的元素可以put没有阻止。 没有任何内在容量限制的A BlockingQueue总是报告剩余容量为Integer.MAX_VALUE </span><br><span class="line">   </span><br><span class="line">   </span><br><span class="line"> * &#123;@code BlockingQueue&#125; implementations are designed to be used</span><br><span class="line"> * primarily for producer-consumer queues, but additionally support</span><br><span class="line"> * the &#123;@link java.util.Collection&#125; interface.  So, for example, it is</span><br><span class="line"> * possible to remove an arbitrary element from a queue using</span><br><span class="line"> * &#123;@code remove(x)&#125;. However, such operations are in general</span><br><span class="line"> * &lt;em&gt;not&lt;/em&gt; performed very efficiently, and are intended for only</span><br><span class="line"> * occasional use, such as when a queued message is cancelled.</span><br><span class="line"> * </span><br><span class="line">   BlockingQueue实现被设计为主要用于生产者 - 消费者队列，但另外支持Collection接口。 因此，例如，可以使用remove(x)从队列中删除任意元素。 然而，这样的操作通常不能非常有效地执行，并且仅用于偶尔使用，例如当排队的消息被取消时。</span><br><span class="line"> </span><br><span class="line"> * &#123;@code BlockingQueue&#125; implementations are thread-safe.  All</span><br><span class="line"> * queuing methods achieve their effects atomically using internal</span><br><span class="line"> * locks or other forms of concurrency control. However, the</span><br><span class="line"> * &lt;em&gt;bulk&lt;/em&gt; Collection operations &#123;@code addAll&#125;,</span><br><span class="line"> * &#123;@code containsAll&#125;, &#123;@code retainAll&#125; and &#123;@code removeAll&#125; are</span><br><span class="line"> * &lt;em&gt;not&lt;/em&gt; necessarily performed atomically unless specified</span><br><span class="line"> * otherwise in an implementation. So it is possible, for example, for</span><br><span class="line"> * &#123;@code addAll(c)&#125; to fail (throwing an exception) after adding</span><br><span class="line"> * only some of the elements in &#123;@code c&#125;.</span><br><span class="line"> *</span><br><span class="line">   BlockingQueue实现是线程安全的。 所有排队方法使用内部锁或其他形式的并发控制在原子上实现其效果。 然而， 大量的Collection操作addAll ， containsAll ， retainAll和removeAll 不一定原子除非在实现中另有规定执行。 因此有可能，例如，为addAll(c)到只增加一些元件在后失败（抛出异常） c 。</span><br><span class="line"> </span><br><span class="line"> </span><br><span class="line"> * A &#123;@code BlockingQueue&#125; does &lt;em&gt;not&lt;/em&gt; intrinsically support</span><br><span class="line"> * any kind of &amp;quot;close&amp;quot; or &amp;quot;shutdown&amp;quot; operation to</span><br><span class="line"> * indicate that no more items will be added.  The needs and usage of</span><br><span class="line"> * such features tend to be implementation-dependent. For example, a</span><br><span class="line"> * common tactic is for producers to insert special</span><br><span class="line"> * &lt;em&gt;end-of-stream&lt;/em&gt; or &lt;em&gt;poison&lt;/em&gt; objects, that are</span><br><span class="line"> * interpreted accordingly when taken by consumers.</span><br><span class="line"> * </span><br><span class="line">   A BlockingQueue上不支持任何类型的“关闭”或“关闭”操作，表示不再添加项目。 这些功能的需求和使用往往依赖于实现。 例如，一个常见的策略是生产者插入特殊的尾流或毒物 ，这些消费者在被消费者摄取时被相应地解释</span><br><span class="line">   </span><br><span class="line">   </span><br><span class="line"> *  </span><br><span class="line"> * Usage example, based on a typical producer-consumer scenario.</span><br><span class="line"> * Note that a &#123;@code BlockingQueue&#125; can safely be used with multiple</span><br><span class="line"> * producers and multiple consumers.</span><br><span class="line"> 使用示例，基于典型的生产者 - 消费者场景。 请注意， BlockingQueue可以安全地与多个生产者和多个消费者一起使用。</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2018/11/11/BlockingQueue翻译/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+	 
+	
+	
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+
+  </article>
+
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://air-project.github.io/2018/11/11/Queue翻译/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1024,7 +1206,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-count">5</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1126,7 +1308,7 @@
     </span>
     
       <span class="post-meta-item-text">全站共&#58;</span>
-    10.8k字</span>
+    13.5k字</span>
   
   
 <span class="post-meta-divider">|</span>
