@@ -96,7 +96,7 @@
 <meta property="og:site_name" content="浩汝烟海">
 <meta property="og:description" content="翻译类注释 1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374757677787980818283/** * A &amp;#123;@link java.util.Queue&amp;#">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-11-11T15:09:39.309Z">
+<meta property="og:updated_time" content="2018-11-12T02:53:00.064Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="BlockingQueue翻译">
 <meta name="twitter:description" content="翻译类注释 1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374757677787980818283/** * A &amp;#123;@link java.util.Queue&amp;#">
@@ -435,6 +435,40 @@
 <li>一般用于这样的场景：一个线程生产对象，另一个线程来消耗对象</li>
 <li>不能向BlockingQueue中插入null,否则会抛出NullPointerException异常</li>
 </ol>
+<table>
+<thead>
+<tr>
+<th>operation</th>
+<th>Throws Exception</th>
+<th>Special Value</th>
+<th>Blocks新</th>
+<th>Times Out新</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Insert</td>
+<td>add(o)</td>
+<td>offer(o)</td>
+<td>put(o)    阻塞</td>
+<td>offer(o, timeout, timeunit)</td>
+</tr>
+<tr>
+<td>Remove</td>
+<td>remove(o)</td>
+<td>poll()</td>
+<td>take()    阻塞</td>
+<td>poll(timeout, timeunit)</td>
+</tr>
+<tr>
+<td>Examine</td>
+<td>element()</td>
+<td>peek()</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 
       
     </div>
@@ -863,7 +897,7 @@
     </span>
     
       <span class="post-meta-item-text">全站共&#58;</span>
-    13.5k字</span>
+    13.6k字</span>
   
   
 <span class="post-meta-divider">|</span>
