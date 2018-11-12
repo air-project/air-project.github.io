@@ -305,3 +305,10 @@ public interface BlockingQueue<E> extends Queue<E> {
 1. 不能向BlockingQueue中插入null,否则会抛出NullPointerException异常
     
 
+
+operation	|Throws Exception	|Special Value	|Blocks新	|Times Out新
+---|---|---|---|---
+Insert	    |add(o)				|offer(o)		|put(o)	阻塞    |offer(o, timeout, timeunit)
+Remove	    |remove(o)			|poll()			|take()	阻塞    |poll(timeout, timeunit)
+Examine	    |element()			|peek()		    |               |
+    
