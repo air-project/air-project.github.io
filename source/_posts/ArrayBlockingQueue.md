@@ -62,20 +62,69 @@ categories:
 <!-- more -->
  
 
-##### 小结  
-关键词：
-1. 阻塞
-1. 访问顺序
- 
-疑问？java里什么可以实现阻塞：synchronized，lock...
-访问顺序由简单的true,false控制公平性是不是很容易想到ReentrantLock   
-接下来带着疑问，继续源码
-
-
 #### 源码
+
+##### 类结构
+
+![](http://pi42kejq1.bkt.clouddn.com/201811132111_514.png?markdown/)
+
+
+说明：  
+
+1. ArrayBlockingQueue继承于AbstractQueue，并且它实现了BlockingQueue接口。
+
+
+2. ArrayBlockingQueue内部是通过Object[]数组保存数据的，也就是说ArrayBlockingQueue是一个基于数组的阻塞并发队列，并且在初始化的时候必须指定整个容器的大小（也就是成员变量数组的大小），并且后面也会知道，整个容器是不会扩容的。
+
+
+3. ArrayBlockingQueue与ReentrantLock是组合关系，ArrayBlockingQueue中包含一个ReentrantLock对象(lock)。ReentrantLock是可重入的互斥锁，ArrayBlockingQueue就是根据该互斥锁实现“多线程对竞争资源的互斥访问”。而且，ReentrantLock分为公平锁和非公平锁，关于具体使用公平锁还是非公平锁，在创建ArrayBlockingQueue时可以指定，并且默认使用的是非公平锁。
+
+
+4. ArrayBlockingQueue与Condition是组合关系，ArrayBlockingQueue中包含两个Condition对象(notEmpty和notFull)。而且，Condition又依赖于ArrayBlockingQueue而存在，通过Condition可以实现对ArrayBlockingQueue的更精确的访问
+
+5. Condition的signal()，await()需要使用在lock,unlock之间才有效。
+ 
+
+##### 重要属性
+```
+    /** The queued items */
+    final Object[] items;
+
+    /** items index for next take, poll, peek or remove */
+    int takeIndex;// 下一个被取出元素的索引
+
+    /** items index for next put, offer, or add */
+    int putIndex;// 下一个被添加元素的索引
+
+    /** Number of elements in the queue */
+    //队列中元素的个数
+    int count;
+
+    /*
+     * Concurrency control uses the classic two-condition algorithm
+     * found in any textbook.
+     */
+
+    /** Main lock guarding all access */
+    //主锁保护所有通道
+    final ReentrantLock lock;
+
+    /** Condition for waiting takes */
+    private final Condition notEmpty;
+
+    /** Condition for waiting puts */
+    private final Condition notFull;
+```
+
+说明：
+1. 前面类注释提到 Once created, the capacity cannot be  changed
+  那items这个成员变量修饰符上应该有一个final修饰吧。关于final可以申明时赋值或者构造里赋值。那这个肯定是构造时赋的值了？？
 
 
 ##### 构造方法
+
+一共有3个，这里说其中2个：
+
 ```
     public ArrayBlockingQueue(int capacity) {
         this(capacity, false);
@@ -93,11 +142,8 @@ categories:
     public ArrayBlockingQueue(int capacity, boolean fair) {
         if (capacity <= 0)
             throw new IllegalArgumentException();
-        //前面类注释提到 Once created, the capacity cannot be  changed
-        //那items这个成员变量修饰符上应该有一个final吧，果然
-        //final Object[] items;
+        //果然
         this.items = new Object[capacity];
-        //果不其然，再这里使用了ReentrantLock，如果这不熟悉，参考ReentrantLock这一节
         lock = new ReentrantLock(fair);//fair为true，表示是公平锁；fair为false，表示是非公平锁。
         notEmpty = lock.newCondition();//notEmpty和notFull是锁的两个Condition条件
         notFull =  lock.newCondition();
@@ -105,13 +151,22 @@ categories:
  
 ```
 
-Lock的作用是提供独占锁机制，来保护竞争资源；而Condition是为了更加精细的对锁进行控制，它依赖于Lock，通过某个条件对多线程进行控制。
-notEmpty表示“锁的非空条件”。当某线程想从队列中取数据时，而此时又没有数据，则该线程通过notEmpty.await()进行等待；当其它线程向队列中插入了元素之后，就调用notEmpty.signal()唤醒“之前通过notEmpty.await()进入等待状态的线程”。
+说明：
+
+1. Lock的作用是提供独占锁机制，来保护竞争资源；
+2. Condition是为了更加精细的对锁进行控制，它依赖于Lock，通过某个条件对多线程进行控制。notEmpty表示“锁的非空条件”。当某线程想从队列中取数据时，而此时又没有数据，则该线程通过notEmpty.await()进行等待；当其它线程向队列中插入了元素之后，就调用notEmpty.signal()唤醒“之前通过notEmpty.await()进入等待状态的线程”。
 同理，notFull表示“锁的满条件”。当某线程想向队列中插入元素，而此时队列已满时，该线程等待；当其它线程从队列中取出元素之后，就唤醒该等待的线程。
 
-当然还有两个比较关心的方法put,take
+
+- (01)若某线程(线程A)要取数据时，数组正好为空，则该线程会执行notEmpty.await()进行等待；当其它某个线程(线程B)向数组中插入了数据之后，会调用notEmpty.signal()唤醒“notEmpty上的等待线程”。此时，线程A会被唤醒从而得以继续运行。
+
+- (02)若某线程(线程H)要插入数据时，数组已满，则该线程会它执行notFull.await()进行等待；当其它某个线程(线程I)取出数据之后，会调用notFull.signal()唤醒“notFull上的等待线程”。此时，线程H就会被唤醒从而得以继续运行。
+
+
+接下来看类注释中提到的方法put,take
 
 ##### put
+
 ```
     public void put(E e) throws InterruptedException {
         // 创建插入的元素是否为null，是的话抛出NullPointerException异常
@@ -187,45 +242,9 @@ notEmpty表示“锁的非空条件”。当某线程想从队列中取数据时
         return x;
     }
 ```
+ 
 
-##### 重要的成员变量
-```
-    /** The queued items */
-    final Object[] items;
-
-    /** items index for next take, poll, peek or remove */
-    int takeIndex;// 下一个被取出元素的索引
-
-    /** items index for next put, offer, or add */
-    int putIndex;// 下一个被添加元素的索引
-
-    /** Number of elements in the queue */
-    //队列中元素的个数
-    int count;
-
-    /*
-     * Concurrency control uses the classic two-condition algorithm
-     * found in any textbook.
-     */
-
-    /** Main lock guarding all access */
-    //主锁保护所有通道
-    final ReentrantLock lock;
-
-    /** Condition for waiting takes */
-    private final Condition notEmpty;
-
-    /** Condition for waiting puts */
-    private final Condition notFull;
-```
 
 至此，我们从类注释上该了解的内容就是这些了。。
 
- ![](http://pi42kejq1.bkt.clouddn.com/201811131642_813.png?markdown/)
-
-
-#### 总结
-1. ArrayBlockingQueue是一个基于数组的阻塞并发队列，并且在初始化的时候必须指定整个容器的大小（也就是成员变量数组的大小），并且后面也会知道，整个容器是不会扩容的，并且默认使用的是非公平锁。
-1. Condition的signal()，await()需要使用在lock,unlock之间才有效。
- 
- 
+![](http://pi42kejq1.bkt.clouddn.com/201811132245_977.png?markdown/)
