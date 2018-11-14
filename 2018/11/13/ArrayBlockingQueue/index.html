@@ -98,7 +98,7 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://pi42kejq1.bkt.clouddn.com/201811132111_514.png?markdown/">
 <meta property="og:image" content="http://pi42kejq1.bkt.clouddn.com/201811132245_977.png?markdown/">
-<meta property="og:updated_time" content="2018-11-14T05:35:38.459Z">
+<meta property="og:updated_time" content="2018-11-14T07:52:00.252Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="ArrayBlockingQueue">
 <meta name="twitter:description" content="翻译类注释 1234567891011121314151617181920212223242526272829303132333435363738394041/*** A bounded &amp;#123;@linkplain BlockingQueue blocking queue&amp;#125; backed by an* array.  This queue orders elements FIFO">
@@ -391,7 +391,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  1.9k
+                  2k
                 </span>
               
 
@@ -407,7 +407,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  7
+                  8
                 </span>
               
             </div>
@@ -471,6 +471,10 @@
 <p>至此，我们从类注释上该了解的内容就是这些了。。</p>
 <p><img src="http://pi42kejq1.bkt.clouddn.com/201811132245_977.png?markdown/" alt=""></p>
 <p><a href="https://www.processon.com/i/5aff9239e4b0ad442889145d" target="_blank" rel="noopener">画图工具</a></p>
+<h4 id="遗留问题"><a href="#遗留问题" class="headerlink" title="遗留问题"></a>遗留问题</h4><ol>
+<li>final Object[] items = this.items;<br>为什么enqueue方法里要声明items,去引用成员变量？？有人说是线程安全，但是方法里的变量不都有自己的线程栈吗？而且前后也使用了独占锁进行lock啊，说明里面就一个线程在玩啊<br>Object[] items = this.items;这样可以不呢？？为什么方法还要声明为final? 改成如下会有什么问题吗？？？？谁写个测试<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">private void enqueue(E x) &#123;  </span><br><span class="line">        this.items[putIndex] = x;</span><br><span class="line">        if (++putIndex == this.items.length)</span><br><span class="line">            putIndex = 0;</span><br><span class="line">        count++;</span><br><span class="line">        notEmpty.signal();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
 
       
     </div>
@@ -865,7 +869,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#翻译"><span class="nav-number">1.</span> <span class="nav-text">翻译</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#类注释"><span class="nav-number">1.1.</span> <span class="nav-text">类注释</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#源码"><span class="nav-number">2.</span> <span class="nav-text">源码</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#类结构"><span class="nav-number">2.1.</span> <span class="nav-text">类结构</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#重要属性"><span class="nav-number">2.2.</span> <span class="nav-text">重要属性</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#构造方法"><span class="nav-number">2.3.</span> <span class="nav-text">构造方法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#put"><span class="nav-number">2.4.</span> <span class="nav-text">put</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#take"><span class="nav-number">2.5.</span> <span class="nav-text">take</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#翻译"><span class="nav-number">1.</span> <span class="nav-text">翻译</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#类注释"><span class="nav-number">1.1.</span> <span class="nav-text">类注释</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#源码"><span class="nav-number">2.</span> <span class="nav-text">源码</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#类结构"><span class="nav-number">2.1.</span> <span class="nav-text">类结构</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#重要属性"><span class="nav-number">2.2.</span> <span class="nav-text">重要属性</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#构造方法"><span class="nav-number">2.3.</span> <span class="nav-text">构造方法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#put"><span class="nav-number">2.4.</span> <span class="nav-text">put</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#take"><span class="nav-number">2.5.</span> <span class="nav-text">take</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#遗留问题"><span class="nav-number">3.</span> <span class="nav-text">遗留问题</span></a></li></ol></div>
             
 
           </div>
@@ -899,7 +903,7 @@
     </span>
     
       <span class="post-meta-item-text">全站共&#58;</span>
-    15.4k字</span>
+    15.6k字</span>
   
   
 <span class="post-meta-divider">|</span>
