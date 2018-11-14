@@ -250,3 +250,18 @@ categories:
 ![](http://pi42kejq1.bkt.clouddn.com/201811132245_977.png?markdown/)
 
 [画图工具](https://www.processon.com/i/5aff9239e4b0ad442889145d)
+
+#### 遗留问题
+1. final Object[] items = this.items;
+   为什么enqueue方法里要声明items,去引用成员变量？？有人说是线程安全，但是方法里的变量不都有自己的线程栈吗？而且前后也使用了独占锁进行lock啊，说明里面就一个线程在玩啊
+   Object[] items = this.items;这样可以不呢？？为什么方法还要声明为final? 改成如下会有什么问题吗？？？？谁写个测试
+```
+private void enqueue(E x) {  
+        this.items[putIndex] = x;
+        if (++putIndex == this.items.length)
+            putIndex = 0;
+        count++;
+        notEmpty.signal();
+    }
+```
+
