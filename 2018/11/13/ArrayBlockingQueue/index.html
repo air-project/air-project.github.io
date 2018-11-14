@@ -98,7 +98,7 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://pi42kejq1.bkt.clouddn.com/201811132111_514.png?markdown/">
 <meta property="og:image" content="http://pi42kejq1.bkt.clouddn.com/201811132245_977.png?markdown/">
-<meta property="og:updated_time" content="2018-11-14T05:33:20.965Z">
+<meta property="og:updated_time" content="2018-11-14T05:35:38.459Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="ArrayBlockingQueue">
 <meta name="twitter:description" content="翻译类注释 1234567891011121314151617181920212223242526272829303132333435363738394041/*** A bounded &amp;#123;@linkplain BlockingQueue blocking queue&amp;#125; backed by an* array.  This queue orders elements FIFO">
@@ -407,7 +407,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  8
+                  7
                 </span>
               
             </div>
@@ -470,7 +470,7 @@
 <h5 id="take"><a href="#take" class="headerlink" title="take"></a>take</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">public E take() throws InterruptedException &#123;</span><br><span class="line">    // 获取“该阻塞队列的独占锁”</span><br><span class="line">    final ReentrantLock lock = this.lock;</span><br><span class="line">    // 获取“锁”，若当前线程是中断状态，则抛出InterruptedException异常</span><br><span class="line">    lock.lockInterruptibly();</span><br><span class="line">    try &#123; // 若“队列为空”，则一直等待。</span><br><span class="line">        while (count == 0)</span><br><span class="line">            notEmpty.await();</span><br><span class="line">        return dequeue();// 取出元素</span><br><span class="line">    &#125; finally &#123;</span><br><span class="line">       // 释放“锁”</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private E dequeue() &#123; </span><br><span class="line">    final Object[] items = this.items;</span><br><span class="line">    </span><br><span class="line">     // 强制将元素转换为“泛型E”</span><br><span class="line">    @SuppressWarnings(&quot;unchecked&quot;)</span><br><span class="line">    E x = (E) items[takeIndex];</span><br><span class="line">    </span><br><span class="line">    // 将第takeIndex元素设为null，即删除。同时，帮助GC回收。</span><br><span class="line">    items[takeIndex] = null;</span><br><span class="line">    // 设置“下一个被取出元素的索引”</span><br><span class="line">    //若++takeIndex的值等于“队列的长度”，即取出元素之后，队列空；则设置“下一个被取出元素的索引”为0。</span><br><span class="line">    if (++takeIndex == items.length)</span><br><span class="line">        takeIndex = 0;</span><br><span class="line">        </span><br><span class="line">    // 将“队列中元素数量”-1</span><br><span class="line">    count--;</span><br><span class="line">    if (itrs != null)</span><br><span class="line">        itrs.elementDequeued();//同时更新迭代器中的元素数据，这个什么时候需要呢？</span><br><span class="line">        </span><br><span class="line">    // 唤醒notFull上的等待线程。    </span><br><span class="line">    notFull.signal();</span><br><span class="line">    return x;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>至此，我们从类注释上该了解的内容就是这些了。。</p>
 <p><img src="http://pi42kejq1.bkt.clouddn.com/201811132245_977.png?markdown/" alt=""></p>
-<p>[画图工具]<a href="https://www.processon.com/i/5aff9239e4b0ad442889145d" target="_blank" rel="noopener">https://www.processon.com/i/5aff9239e4b0ad442889145d</a></p>
+<p><a href="https://www.processon.com/i/5aff9239e4b0ad442889145d" target="_blank" rel="noopener">画图工具</a></p>
 
       
     </div>
